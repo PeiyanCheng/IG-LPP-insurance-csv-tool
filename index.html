@@ -21,10 +21,8 @@ body {
   padding: 32px;
   background: #fff;
   border-radius: 18px;
-  overflow: hidden;
 }
 
-/* ===== Title ===== */
 .page-title {
   text-align: center;
   font-family: 'Playfair Display', serif;
@@ -47,12 +45,6 @@ body {
   gap: 12px;
   margin-bottom: 20px;
   flex-wrap: wrap;
-}
-
-.left-actions, .right-actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
 }
 
 .btn {
@@ -99,25 +91,17 @@ body {
 }
 
 /* ===== Preview ===== */
-.preview-section {
-  background: #fff;
-  border-radius: 14px;
-  padding: 20px;
-  margin-bottom: 24px;
-}
-
 .preview-flex {
   display: flex;
   gap: 24px;
+  margin-bottom: 24px;
 }
 
 @media (max-width: 900px) {
   .preview-flex { flex-direction: column; }
 }
 
-/* ===== Cards ===== */
 .card {
-  box-sizing: border-box;
   flex: 1;
   min-width: 0;
   border-radius: 12px;
@@ -127,7 +111,7 @@ body {
 
 .card-illustration { background: #f1fbf4; }
 .card-lpp { background: #f1f7ff; }
-.card-admin { background: #f6f7f8; margin-bottom: 24px; }
+.card-rules { background: #f6f7f8; }
 
 .card h3 {
   margin: 0 0 10px 0;
@@ -137,8 +121,7 @@ body {
 /* ===== Tables ===== */
 .table-scroll {
   max-height: 320px;
-  overflow-x: auto;
-  overflow-y: auto;
+  overflow: auto;
   border: 1px solid #ccc;
   border-radius: 8px;
 }
@@ -147,7 +130,6 @@ table {
   border-collapse: collapse;
   font-size: 12px;
   width: max-content;
-  background: #fff;
 }
 
 th, td {
@@ -177,13 +159,13 @@ th {
 /* ===== Rules ===== */
 .rule-row {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .rule-label {
-  width: 220px;
+  width: 240px;
   font-weight: 600;
   font-size: 13px;
 }
@@ -199,7 +181,7 @@ th {
 .rule-hint {
   font-size: 12px;
   color: #555;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 </style>
 </head>
@@ -208,56 +190,44 @@ th {
 <div class="page-container">
 
 <div class="page-title">Insurance Illustration → LPP Standardized CSV</div>
-<div class="page-subtitle">Client-safe output with Admin rule control</div>
+<div class="page-subtitle">Admin tool — upload, match, review, export</div>
 
 <div class="action-bar">
-  <div class="left-actions">
-    <label class="btn btn-upload">
-      Upload illustration files
-      <input id="fileInput" class="file-input" type="file" multiple onchange="processFiles()">
-    </label>
+  <label class="btn btn-upload">
+    Upload illustration files
+    <input id="fileInput" class="file-input" type="file" multiple onchange="loadFiles()">
+  </label>
+
+  <div>
     <button class="btn btn-primary" onclick="downloadCurrent()">Download current CSV</button>
     <button class="btn btn-primary" onclick="downloadAll()">Download all CSVs</button>
-  </div>
-
-  <div class="right-actions">
-    <label>Mode:</label>
-    <select id="modeSelect" onchange="applyMode()">
-      <option value="client">Client mode</option>
-      <option value="admin">Admin mode</option>
-    </select>
   </div>
 </div>
 
 <div id="fileTabs" class="file-tabs"></div>
 
-<div class="preview-section">
-  <div class="preview-flex">
+<div class="preview-flex">
+  <div class="card card-illustration">
+    <h3>Original illustration</h3>
+    <div id="originalPreview" class="table-scroll"></div>
+  </div>
 
-    <div id="adminOnlyIllustration" class="card card-illustration">
-      <h3>Original illustration (Admin)</h3>
-      <div id="originalPreview" class="table-scroll"></div>
-    </div>
-
-    <div class="card card-lpp">
-      <h3>LPP standardized preview</h3>
-      <div id="csvPreview" class="table-scroll"></div>
-    </div>
-
+  <div class="card card-lpp">
+    <h3>LPP standardized preview</h3>
+    <div id="csvPreview" class="table-scroll"></div>
   </div>
 </div>
 
-<div id="adminOnlyRules" class="card card-admin">
-  <h3>Field matching rules (Admin)</h3>
+<div class="card card-rules">
+  <h3>Field matching rules</h3>
   <div class="rule-hint">
-    Use <b>|</b> to separate <b>OR</b> conditions.<br>
-    Example: <code>death benefit | payout on death | total death</code>
+    Use <b>|</b> for OR conditions. Example: <code>death benefit | payout on death | total death</code>
   </div>
   <div id="rulesContainer"></div>
 </div>
 
 <script>
-/* ===== Configuration ===== */
+/* ===== Config ===== */
 const TEMPLATE_FIELDS = [
   "Annual premium",
   "Cash surrender value",
@@ -270,7 +240,7 @@ const TEMPLATE_FIELDS = [
   "Premiums paid by policy"
 ];
 
-const DEFAULT_RULES = {
+let rules = {
   "Annual premium": "premium | annualized premium | monthly premium",
   "Cash surrender value": "cash surrender | cash value",
   "Death benefit": "death benefit | payout on death | total death",
@@ -282,52 +252,21 @@ const DEFAULT_RULES = {
   "Premiums paid by policy": "premium dividend"
 };
 
-/* ===== State ===== */
-let results = {};
+let rawFiles = {};
 let fileOrder = [];
 let currentFile = "";
-let rules = { ...DEFAULT_RULES };
-
-/* ===== Init ===== */
-window.onload = () => {
-  renderRules();
-  applyMode();
-};
-
-/* ===== Mode ===== */
-function applyMode() {
-  const isAdmin = document.getElementById("modeSelect").value === "admin";
-  document.getElementById("adminOnlyIllustration").style.display = isAdmin ? "block" : "none";
-  document.getElementById("adminOnlyRules").style.display = isAdmin ? "block" : "none";
-}
-
-/* ===== Rules UI ===== */
-function renderRules() {
-  const container = document.getElementById("rulesContainer");
-  container.innerHTML = "";
-  TEMPLATE_FIELDS.forEach(field => {
-    const row = document.createElement("div");
-    row.className = "rule-row";
-    row.innerHTML = `
-      <div class="rule-label">${field}</div>
-      <input class="rule-input" value="${rules[field] || ""}"
-        oninput="rules['${field}']=this.value">
-    `;
-    container.appendChild(row);
-  });
-}
 
 /* ===== Helpers ===== */
 const normalize = t => String(t || "").toLowerCase();
-function formatNumber(v) {
+const formatNumber = v => {
   const n = Number(v);
   return isNaN(n) ? "0.00" : n.toFixed(2);
-}
+};
 
-/* ===== Processing ===== */
-function processFiles() {
+/* ===== Load files ===== */
+function loadFiles() {
   const files = document.getElementById("fileInput").files;
-  results = {};
+  rawFiles = {};
   fileOrder = [];
   currentFile = "";
 
@@ -338,34 +277,36 @@ function processFiles() {
       const sheet = wb.Sheets[wb.SheetNames[0]];
       const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-      const headers = data[0];
-      const rows = data.slice(1);
+      rawFiles[file.name] = {
+        headers: data[0],
+        rows: data.slice(1)
+      };
 
-      let matchedIndexes = [];
-      let outputRows = rows.map(row => {
-        let out = {};
-        TEMPLATE_FIELDS.forEach(field => {
-          let rule = rules[field] || "";
-          let idx = headers.findIndex(h =>
-            rule.split("|").some(k => normalize(h).includes(normalize(k.trim())))
-          );
-          let val = idx >= 0 ? row[idx] : 0;
-          if (idx >= 0 && normalize(headers[idx]).includes("monthly") && !isNaN(val)) {
-            val *= 12;
-          }
-          out[field] = val || 0;
-          if (idx >= 0) matchedIndexes.push(idx);
-        });
-        return out;
-      });
-
-      results[file.name] = { headers, rows, matchedIndexes, outputRows };
       fileOrder.push(file.name);
       if (!currentFile) currentFile = file.name;
+
       renderTabs();
       render();
     };
     reader.readAsBinaryString(file);
+  });
+
+  renderRules();
+}
+
+/* ===== Rules UI ===== */
+function renderRules() {
+  const c = document.getElementById("rulesContainer");
+  c.innerHTML = "";
+  TEMPLATE_FIELDS.forEach(f => {
+    const row = document.createElement("div");
+    row.className = "rule-row";
+    row.innerHTML = `
+      <div class="rule-label">${f}</div>
+      <input class="rule-input" value="${rules[f]}"
+        oninput="rules['${f}']=this.value; render();">
+    `;
+    c.appendChild(row);
   });
 }
 
@@ -377,52 +318,100 @@ function renderTabs() {
     const t = document.createElement("div");
     t.className = "file-tab" + (name === currentFile ? " active" : "");
     t.innerText = name;
-    t.onclick = () => { currentFile = name; renderTabs(); render(); };
+    t.onclick = () => {
+      currentFile = name;
+      renderTabs();
+      render();
+    };
     tabs.appendChild(t);
   });
 }
 
 /* ===== Render ===== */
 function render() {
-  const data = results[currentFile];
-  if (!data) return;
+  const file = rawFiles[currentFile];
+  if (!file) return;
 
-  let orig = "<table class='freeze-first-col'><thead><tr>";
-  data.headers.forEach(h => orig += `<th>${h}</th>`);
-  orig += "</tr></thead><tbody>";
-  data.rows.forEach(r => {
-    orig += "<tr>";
-    r.forEach((c,i) => orig += `<td class="${data.matchedIndexes.includes(i)?"highlight":""}">${c ?? ""}</td>`);
-    orig += "</tr>";
-  });
-  orig += "</tbody></table>";
-  document.getElementById("originalPreview").innerHTML = orig;
+  const { headers, rows } = file;
+  let matchedIndexes = [];
 
-  let lpp = "<table><thead><tr>";
-  TEMPLATE_FIELDS.forEach(h => lpp += `<th>${h}</th>`);
-  lpp += "</tr></thead><tbody>";
-  data.outputRows.forEach(r => {
-    lpp += "<tr>";
-    TEMPLATE_FIELDS.forEach(h => lpp += `<td>${formatNumber(r[h])}</td>`);
-    lpp += "</tr>";
+  let outputs = rows.map(r => {
+    let out = {};
+    TEMPLATE_FIELDS.forEach(field => {
+      const keywords = rules[field].split("|").map(k => k.trim());
+      const idx = headers.findIndex(h =>
+        keywords.some(k => normalize(h).includes(normalize(k)))
+      );
+      let val = idx >= 0 ? r[idx] : 0;
+      if (idx >= 0 && normalize(headers[idx]).includes("monthly") && !isNaN(val)) {
+        val *= 12;
+      }
+      out[field] = val || 0;
+      if (idx >= 0) matchedIndexes.push(idx);
+    });
+    return out;
   });
-  lpp += "</tbody></table>";
-  document.getElementById("csvPreview").innerHTML = lpp;
+
+  // Original
+  let o = "<table class='freeze-first-col'><thead><tr>";
+  headers.forEach(h => o += `<th>${h}</th>`);
+  o += "</tr></thead><tbody>";
+  rows.forEach(r => {
+    o += "<tr>";
+    r.forEach((c,i) =>
+      o += `<td class="${matchedIndexes.includes(i) ? "highlight" : ""}">${c ?? ""}</td>`
+    );
+    o += "</tr>";
+  });
+  o += "</tbody></table>";
+  document.getElementById("originalPreview").innerHTML = o;
+
+  // LPP
+  let l = "<table><thead><tr>";
+  TEMPLATE_FIELDS.forEach(h => l += `<th>${h}</th>`);
+  l += "</tr></thead><tbody>";
+  outputs.forEach(r => {
+    l += "<tr>";
+    TEMPLATE_FIELDS.forEach(h => l += `<td>${formatNumber(r[h])}</td>`);
+    l += "</tr>";
+  });
+  l += "</tbody></table>";
+  document.getElementById("csvPreview").innerHTML = l;
 }
 
 /* ===== Download ===== */
 function downloadCurrent() {
-  if (currentFile) saveCSV(currentFile);
+  if (currentFile) exportCSV(currentFile);
 }
 function downloadAll() {
-  fileOrder.forEach(saveCSV);
+  fileOrder.forEach(exportCSV);
 }
-function saveCSV(name) {
-  const rows = results[name].outputRows;
+function exportCSV(name) {
+  const rows = rawFiles[name].rows;
+  const file = rawFiles[name];
+  const headers = file.headers;
+
+  let processed = rows.map(r => {
+    let out = {};
+    TEMPLATE_FIELDS.forEach(field => {
+      const keywords = rules[field].split("|").map(k => k.trim());
+      const idx = headers.findIndex(h =>
+        keywords.some(k => normalize(h).includes(normalize(k)))
+      );
+      let val = idx >= 0 ? r[idx] : 0;
+      if (idx >= 0 && normalize(headers[idx]).includes("monthly") && !isNaN(val)) {
+        val *= 12;
+      }
+      out[field] = val || 0;
+    });
+    return out;
+  });
+
   let csv = TEMPLATE_FIELDS.join(",") + "\n";
-  rows.forEach(r => {
+  processed.forEach(r => {
     csv += TEMPLATE_FIELDS.map(h => r[h]).join(",") + "\n";
   });
+
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
   a.download = `LPP-Updated-${name.replace(/\.[^/.]+$/, "")}.csv`;
