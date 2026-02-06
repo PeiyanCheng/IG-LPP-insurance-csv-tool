@@ -4,9 +4,10 @@
 <meta charset="UTF-8" />
 <title>Insurance Illustration → LPP standardized CSV</title>
 
-<!-- Beautiful font for title -->
+<!-- Google Font for elegant title -->
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 
+<!-- XLSX library (CORRECT CDN) -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
@@ -71,7 +72,9 @@ body {
   color:#fff;
 }
 
-.file-input { display:none; }
+.file-input {
+  display:none;
+}
 
 /* ===== File Tabs ===== */
 
@@ -101,13 +104,13 @@ body {
   border-radius:12px;
   padding:16px;
   margin-bottom:24px;
-  box-shadow:0 2px 6px rgba(0,0,0,0.06);
+  box-shadow:0 2px 6px rgba(0,0,0,0.05);
 }
 
-.card-blue { background:#f1f7ff; }
-.card-green { background:#f1fbf4; }
-.card-gray { background:#f5f6f7; }
-.card-yellow { background:#fff8e1; }
+.card-illustration { background:#f1fbf4; }
+.card-lpp { background:#f1f7ff; }
+.card-rules { background:#f6f7f8; }
+.card-explain { background:#ffffff; }
 
 .card h3 {
   margin-top:0;
@@ -129,7 +132,9 @@ th, td {
   white-space:nowrap;
 }
 
-.highlight { background:#fff3cd; }
+.highlight {
+  background:#fff3cd;
+}
 
 .table-scroll {
   max-height:320px;
@@ -146,7 +151,7 @@ th, td {
   z-index:3;
 }
 
-/* Freeze first column for original */
+/* Freeze first column (original illustration only) */
 .freeze-first-col th:first-child,
 .freeze-first-col td:first-child {
   position:sticky;
@@ -197,10 +202,18 @@ th, td {
   Upload insurance illustration files, review standardized output, then download LPP-ready CSVs
 </div>
 
+<!-- ===== ACTION BAR ===== -->
+
 <div class="action-bar">
   <label class="btn btn-upload">
     Upload illustration files
-    <input type="file" id="fileInput" class="file-input" multiple onchange="processFiles()">
+    <input
+      type="file"
+      id="fileInput"
+      class="file-input"
+      multiple
+      onchange="processFiles()"
+    >
   </label>
 
   <button class="btn btn-primary" onclick="downloadCurrent()">Download current CSV</button>
@@ -209,23 +222,23 @@ th, td {
 
 <div id="fileTabs" class="file-tabs"></div>
 
-<!-- ===== Side-by-side Preview ===== -->
+<!-- ===== PREVIEW ===== -->
 
 <div style="display:flex; gap:24px;">
-  <div style="width:50%;" class="card card-blue">
+  <div style="width:50%;" class="card card-illustration">
     <h3>Illustration review</h3>
     <div id="originalPreview"></div>
   </div>
 
-  <div style="width:50%;" class="card card-green">
+  <div style="width:50%;" class="card card-lpp">
     <h3>LPP standardized preview</h3>
     <div id="csvPreview"></div>
   </div>
 </div>
 
-<!-- ===== Rules ===== -->
+<!-- ===== RULES ===== -->
 
-<div class="card card-gray">
+<div class="card card-rules">
   <h3>Field matching rules</h3>
   <div class="rule-hint">
     • Use <b>|</b> to add alternative keywords (OR)<br>
@@ -240,16 +253,226 @@ th, td {
   </table>
 </div>
 
-<!-- ===== Explanation ===== -->
+<!-- ===== EXPLANATION ===== -->
 
-<div class="card card-yellow">
+<div class="card card-explain">
   <h3>Matching explanation</h3>
   <div id="explainArea"></div>
 </div>
 
-<!-- ===== JS (unchanged, keep your current JS here) ===== -->
 <script>
-/* ⚠️ KEEP YOUR EXISTING FINAL v2.5 JS HERE – NO LOGIC CHANGE */
+/* ================= CONFIG ================= */
+
+const TEMPLATE_HEADERS = [
+  "Annual premium","Cash surrender value","Death benefit","Adjusted cost basis",
+  "CDA credit","Dividends paid in cash","Taxable portion of dividends",
+  "Net cost of pure insurance","Premiums paid by policy"
+];
+
+const DEFAULT_RULES = {
+  "Annual premium":"premium | total monthly premium | total annualized premium",
+  "Cash surrender value":"cash surrender | cash value",
+  "Death benefit":"death benefit | payout on death | total death",
+  "Adjusted cost basis":"acb | adjusted cost basis",
+  "CDA credit":"cda | capital dividend account credit",
+  "Dividends paid in cash":"dividend cash | cash dividend",
+  "Taxable portion of dividends":"taxable dividend",
+  "Net cost of pure insurance":"ncpi | cost of insurance",
+  "Premiums paid by policy":"premium dividend"
+};
+
+/* ================= STATE ================= */
+
+let fileResults = {};
+let fileOrder = [];
+let currentFile = "";
+
+/* ================= INIT ================= */
+
+window.onload = () => {
+  const rules = JSON.parse(localStorage.getItem("lpp_rules") || "null") || DEFAULT_RULES;
+  const table = document.getElementById("ruleTable");
+
+  Object.entries(rules).forEach(([field, rule]) => {
+    const row = table.insertRow();
+    row.insertCell().innerText = field;
+    row.insertCell().innerHTML =
+      `<input class="rule-input" value="${rule}">`;
+  });
+};
+
+/* ================= HELPERS ================= */
+
+const norm = t => t.toLowerCase().trim();
+
+function matchRule(header, rule) {
+  const h = norm(header);
+  const groups = rule.split("|").map(g => g.trim()).filter(Boolean);
+  for (const g of groups) {
+    const words = g.split(/\s+/);
+    if (words.every(w => h.includes(w))) return g;
+  }
+  return null;
+}
+
+/* ================= CORE ================= */
+
+function processFiles() {
+  const files = document.getElementById("fileInput").files;
+  if (!files.length) return;
+
+  fileResults = {};
+  fileOrder = [];
+  currentFile = "";
+
+  const rules = {};
+  [...document.querySelectorAll("#ruleTable tr")]
+    .slice(1)
+    .forEach(r => {
+      rules[r.cells[0].innerText] =
+        r.cells[1].querySelector("input").value;
+    });
+
+  localStorage.setItem("lpp_rules", JSON.stringify(rules));
+
+  Array.from(files).forEach(file => processSingleFile(file, rules));
+}
+
+function processSingleFile(file, rules) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, { type:"binary" });
+    const sh = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(sh, { header:1 });
+
+    const headers = data[0];
+    const rows = data.slice(1);
+
+    let matchedIdx = [];
+    let explanationMap = {};
+    let processedRows = rows.map(row => {
+      const out = {};
+      TEMPLATE_HEADERS.forEach(field => {
+        let idx = -1, ruleUsed;
+        headers.forEach((h,i) => {
+          const r = matchRule(h, rules[field]);
+          if (r && idx === -1) { idx = i; ruleUsed = r; }
+        });
+
+        if (idx !== -1) {
+          let v = row[idx];
+          if (norm(headers[idx]).includes("monthly") && !isNaN(v)) v *= 12;
+          out[field] = v || 0;
+          matchedIdx.push(idx);
+          if (!explanationMap[field]) {
+            explanationMap[field] =
+              `${field} ← "${headers[idx]}" (matched by: ${ruleUsed})`;
+          }
+        } else {
+          out[field] = 0;
+          if (!explanationMap[field]) {
+            explanationMap[field] =
+              `⚠ ${field}: no exact matching column found`;
+          }
+        }
+      });
+      return out;
+    });
+
+    fileResults[file.name] = {
+      headers, rows, matchedIdx,
+      processedRows, explanationMap
+    };
+
+    fileOrder.push(file.name);
+    if (!currentFile) currentFile = file.name;
+
+    renderFileTabs();
+    renderCurrent();
+  };
+  reader.readAsBinaryString(file);
+}
+
+/* ================= UI ================= */
+
+function renderFileTabs() {
+  const div = document.getElementById("fileTabs");
+  div.innerHTML = fileOrder.map(name =>
+    `<div class="file-tab ${name===currentFile?"active":""}"
+          onclick="selectFile('${name}')">${name}</div>`
+  ).join("");
+}
+
+function selectFile(name) {
+  currentFile = name;
+  renderFileTabs();
+  renderCurrent();
+}
+
+function renderCurrent() {
+  if (!currentFile) return;
+  const res = fileResults[currentFile];
+
+  let left = "<table class='freeze-first-col'><thead><tr>";
+  res.headers.forEach(h => left += `<th>${h}</th>`);
+  left += "</tr></thead><tbody>";
+
+  res.rows.forEach(r => {
+    left += "<tr>";
+    res.headers.forEach((_,i) => {
+      const cls = res.matchedIdx.includes(i) ? "highlight" : "";
+      left += `<td class="${cls}">${r[i] ?? ""}</td>`;
+    });
+    left += "</tr>";
+  });
+  left += "</tbody></table>";
+
+  let right = "<table><thead><tr>";
+  TEMPLATE_HEADERS.forEach(h => right += `<th>${h}</th>`);
+  right += "</tr></thead><tbody>";
+
+  res.processedRows.forEach(r => {
+    right += "<tr>";
+    TEMPLATE_HEADERS.forEach(h => right += `<td>${r[h]}</td>`);
+    right += "</tr>";
+  });
+  right += "</tbody></table>";
+
+  document.getElementById("originalPreview").innerHTML =
+    `<div class="table-scroll">${left}</div>`;
+  document.getElementById("csvPreview").innerHTML =
+    `<div class="table-scroll">${right}</div>`;
+
+  document.getElementById("explainArea").innerHTML =
+    Object.values(res.explanationMap)
+      .map(e => `<div class="log">${e}</div>`).join("");
+}
+
+/* ================= DOWNLOAD ================= */
+
+function downloadCurrent() {
+  if (!currentFile) return;
+  downloadCSV(currentFile, fileResults[currentFile].processedRows);
+}
+
+function downloadAll() {
+  fileOrder.forEach(name => {
+    downloadCSV(name, fileResults[name].processedRows);
+  });
+}
+
+function downloadCSV(originalName, rows) {
+  const base = originalName.replace(/\.[^/.]+$/, "");
+  let csv = TEMPLATE_HEADERS.join(",") + "\n";
+  rows.forEach(r => {
+    csv += TEMPLATE_HEADERS.map(h => r[h]).join(",") + "\n";
+  });
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv" }));
+  a.download = `LPP-Updated-${base}.csv`;
+  a.click();
+}
 </script>
 
 </div>
