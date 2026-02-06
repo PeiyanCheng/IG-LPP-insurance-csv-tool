@@ -2,186 +2,172 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Insurance Illustration → LPP standardized CSV</title>
+<title>Insurance Illustration → LPP Standardized CSV</title>
 
-<!-- Elegant title font -->
+<!-- Title font -->
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 
-<!-- XLSX (correct CDN) -->
+<!-- XLSX library -->
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
-/* ===== Base ===== */
+/* ================= Base ================= */
 body {
-  background:#f4f6f8;
-  font-family:Inter, Arial, sans-serif;
-  margin:0;
-  color:#333;
+  margin: 0;
+  background: #f4f6f8;
+  font-family: Inter, Arial, sans-serif;
+  color: #333;
 }
 
 .page-container {
-  max-width:1320px;
-  margin:32px auto;
-  padding:32px;
-  background:#fff;
-  border-radius:18px;
+  max-width: 1320px;
+  margin: 32px auto;
+  padding: 32px;
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden; /* Never allow content to overflow the white container */
 }
 
-/* ===== Title ===== */
+/* ================= Title ================= */
 .page-title {
-  text-align:center;
-  font-family:'Playfair Display', serif;
-  font-size:36px;
-  font-weight:700;
-  margin-bottom:6px;
+  text-align: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 36px;
+  font-weight: 700;
+  margin-bottom: 6px;
 }
 
 .page-subtitle {
-  text-align:center;
-  font-size:14px;
-  color:#666;
-  margin-bottom:32px;
+  text-align: center;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 28px;
 }
 
-/* ===== Actions ===== */
+/* ================= Actions ================= */
 .action-bar {
-  display:flex;
-  justify-content:center;
-  gap:14px;
-  margin-bottom:24px;
-  flex-wrap:wrap;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
 }
 
 .btn {
-  padding:12px 22px;
-  font-size:14px;
-  font-weight:600;
-  border-radius:10px;
-  cursor:pointer;
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
 }
 
 .btn-upload {
-  background:#e8f5e9;
-  border:1px solid #66bb6a;
-  color:#2e7d32;
+  background: #e8f5e9;
+  border: 1px solid #66bb6a;
+  color: #2e7d32;
 }
 
 .btn-primary {
-  background:#1976d2;
-  border:none;
-  color:#fff;
+  background: #1976d2;
+  border: none;
+  color: #ffffff;
 }
 
-.file-input { display:none; }
-
-/* ===== Cards ===== */
-.card {
-  box-sizing:border-box;           /* ⭐ 核心修复 */
-  border-radius:14px;
-  padding:16px;
-  box-shadow:0 2px 6px rgba(0,0,0,0.05);
+.file-input {
+  display: none;
 }
 
-.card-illustration { background:#f1fbf4; }
-.card-lpp { background:#f1f7ff; }
-.card-rules { background:#f6f7f8; margin-bottom:24px; }
-.card-explain { background:#ffffff; }
-
-.card h3 {
-  margin:0 0 10px 0;
-  font-size:16px;
-  font-weight:600;
-}
-
-/* ===== Preview Section ===== */
+/* ================= Preview Section ================= */
 .preview-section {
-  background:#ffffff;
-  border-radius:16px;
-  padding:20px;
-  margin-bottom:28px;
-  overflow:hidden;                /* ⭐ 最终兜底 */
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 28px;
 }
 
-/* ===== Preview Layout ===== */
 .preview-flex {
-  display:flex;
-  gap:24px;
+  display: flex;
+  gap: 24px;
 }
 
-/* ===== Responsive ===== */
+/* Responsive layout: stack vertically on small screens */
 @media (max-width: 900px) {
   .preview-flex {
-    flex-direction:column;
+    flex-direction: column;
   }
 }
 
-/* ===== Tables ===== */
-.table-scroll {
-  max-height:340px;
-  overflow:auto;
-  border:1px solid #ccc;
-  border-radius:8px;
+/* ================= Cards ================= */
+.card {
+  box-sizing: border-box; /* Prevent padding from breaking layout */
+  flex: 1;               /* Each card takes 50% width */
+  min-width: 0;          /* Allow internal scrolling */
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
+.card-illustration {
+  background: #f1fbf4;   /* Light green */
+}
+
+.card-lpp {
+  background: #f1f7ff;   /* Light blue */
+}
+
+.card h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+}
+
+/* ================= Tables ================= */
+.table-scroll {
+  max-height: 340px;
+  overflow-x: auto;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+/* Tables may be wider than the container */
 table {
-  border-collapse:collapse;
-  font-size:12px;
-  background:#fff;
-  width:max-content;
+  border-collapse: collapse;
+  font-size: 12px;
+  background: #ffffff;
+  width: max-content;
 }
 
 th, td {
-  border:1px solid #ccc;
-  padding:4px 6px;
-  white-space:nowrap;
-  text-align:right;
+  border: 1px solid #ccc;
+  padding: 4px 6px;
+  white-space: nowrap;
+  text-align: right;
 }
 
+/* Sticky header */
 th {
-  background:#f1f3f6;
-  text-align:center;
-  position:sticky;
-  top:0;
-  z-index:3;
+  position: sticky;
+  top: 0;
+  background: #f1f3f6;
+  z-index: 3;
 }
 
-.highlight { background:#fff7cc; }
-
-/* Freeze first column (original illustration) */
+/* Freeze first column in original illustration */
 .freeze-first-col th:first-child,
 .freeze-first-col td:first-child {
-  position:sticky;
-  left:0;
-  background:#fafafa;
-  z-index:2;
+  position: sticky;
+  left: 0;
+  background: #fafafa;
+  z-index: 2;
 }
 
 .freeze-first-col thead th:first-child {
-  z-index:4;
+  z-index: 4;
 }
 
-/* ===== Rules ===== */
-.rule-input {
-  width:480px;
-  padding:6px;
-  border-radius:6px;
-  border:1px solid #bbb;
-}
-
-.rule-hint {
-  font-size:12px;
-  color:#555;
-  margin-bottom:10px;
-}
-
-/* ===== Explanation ===== */
-.log {
-  background:#fff;
-  border:1px solid #ccc;
-  padding:8px;
-  margin:6px 0;
-  font-size:12px;
-  border-radius:6px;
+/* Highlight matched source columns */
+.highlight {
+  background: #fff7cc;
 }
 </style>
 </head>
@@ -189,215 +175,208 @@ th {
 <body>
 <div class="page-container">
 
-<div class="page-title">
-  Insurance Illustration → LPP standardized CSV
-</div>
-<div class="page-subtitle">
-  Upload insurance illustration files, review standardized output, then download LPP-ready CSVs
-</div>
-
-<!-- ===== ACTION BAR ===== -->
-<div class="action-bar">
-  <label class="btn btn-upload">
-    Upload illustration files
-    <input type="file" id="fileInput" class="file-input" multiple onchange="processFiles()">
-  </label>
-
-  <button class="btn btn-primary" onclick="downloadCurrent()">Download current CSV</button>
-  <button class="btn btn-primary" onclick="downloadAll()">Download all CSVs</button>
-</div>
-
-<div id="fileTabs"></div>
-
-<!-- ===== PREVIEW ===== -->
-<div class="preview-section">
-  <div class="preview-flex">
-
-    <div class="card card-illustration" style="flex:1;">
-      <h3>Illustration review</h3>
-      <div id="originalPreview"></div>
-    </div>
-
-    <div class="card card-lpp" style="flex:1;">
-      <h3>LPP standardized preview</h3>
-      <div id="csvPreview"></div>
-    </div>
-
-  </div>
-</div>
-
-<!-- ===== RULES ===== -->
-<div class="card card-rules">
-  <h3>Field matching rules</h3>
-  <div class="rule-hint">
-    Use <b>|</b> for OR &nbsp;•&nbsp; Words in one group are AND
+  <div class="page-title">
+    Insurance Illustration → LPP Standardized CSV
   </div>
 
-  <table id="ruleTable">
-    <tr><th>LPP field</th><th>Keywords</th></tr>
-  </table>
-</div>
+  <div class="page-subtitle">
+    Upload insurance illustration files, review standardized output, then download LPP-ready CSV files
+  </div>
 
-<!-- ===== EXPLANATION ===== -->
-<div class="card card-explain">
-  <h3>Matching explanation</h3>
-  <div id="explainArea"></div>
-</div>
+  <!-- Action buttons -->
+  <div class="action-bar">
+    <label class="btn btn-upload">
+      Upload illustration files
+      <input id="fileInput" class="file-input" type="file" multiple onchange="processFiles()">
+    </label>
+
+    <button class="btn btn-primary" onclick="downloadCurrent()">Download current CSV</button>
+    <button class="btn btn-primary" onclick="downloadAll()">Download all CSVs</button>
+  </div>
+
+  <!-- Preview section -->
+  <div class="preview-section">
+    <div class="preview-flex">
+
+      <div class="card card-illustration">
+        <h3>Illustration review</h3>
+        <div id="originalPreview" class="table-scroll sync-scroll"></div>
+      </div>
+
+      <div class="card card-lpp">
+        <h3>LPP standardized preview</h3>
+        <div id="csvPreview" class="table-scroll sync-scroll"></div>
+      </div>
+
+    </div>
+  </div>
 
 <script>
-/* ================= CONFIG ================= */
+/* ================= Configuration ================= */
+
 const TEMPLATE_HEADERS = [
-  "Annual premium","Cash surrender value","Death benefit","Adjusted cost basis",
-  "CDA credit","Dividends paid in cash","Taxable portion of dividends",
-  "Net cost of pure insurance","Premiums paid by policy"
+  "Annual premium",
+  "Cash surrender value",
+  "Death benefit",
+  "Adjusted cost basis",
+  "CDA credit",
+  "Dividends paid in cash",
+  "Taxable portion of dividends",
+  "Net cost of pure insurance",
+  "Premiums paid by policy"
 ];
 
-const DEFAULT_RULES = {
-  "Annual premium":"premium | total monthly premium | total annualized premium",
-  "Cash surrender value":"cash surrender | cash value",
-  "Death benefit":"death benefit | payout on death | total death",
-  "Adjusted cost basis":"acb | adjusted cost basis",
-  "CDA credit":"cda | capital dividend account credit",
-  "Dividends paid in cash":"dividend cash | cash dividend",
-  "Taxable portion of dividends":"taxable dividend",
-  "Net cost of pure insurance":"ncpi | cost of insurance",
-  "Premiums paid by policy":"premium dividend"
-};
+/* ================= State ================= */
 
-/* ================= STATE ================= */
-let fileResults = {};
+let results = {};
 let fileOrder = [];
 let currentFile = "";
 
-/* ================= INIT ================= */
-window.onload = () => {
-  const rules = JSON.parse(localStorage.getItem("lpp_rules") || "null") || DEFAULT_RULES;
-  const table = document.getElementById("ruleTable");
+/* ================= Helpers ================= */
 
-  Object.entries(rules).forEach(([f,r]) => {
-    const row = table.insertRow();
-    row.insertCell().innerText = f;
-    row.insertCell().innerHTML = `<input class="rule-input" value="${r}">`;
-  });
-};
+const normalize = text => String(text || "").toLowerCase();
 
-/* ================= HELPERS ================= */
-const norm = t => t.toLowerCase().trim();
-
-function matchRule(header, rule) {
-  if (!rule) return null;
-  const h = norm(header);
-  const groups = rule.split("|").map(g => g.trim()).filter(Boolean);
-  for (const g of groups) {
-    if (g.split(/\s+/).every(w => h.includes(w))) return g;
-  }
-  return null;
+function formatNumber(value) {
+  const num = Number(value);
+  return isNaN(num) ? "0.00" : num.toFixed(2);
 }
 
-function fmt(v) {
-  const n = Number(v);
-  return isNaN(n) ? "0.00" : n.toFixed(2);
-}
+/* ================= Core Processing ================= */
 
-/* ================= CORE ================= */
 function processFiles() {
   const files = document.getElementById("fileInput").files;
   if (!files.length) return;
 
-  fileResults = {};
+  results = {};
   fileOrder = [];
   currentFile = "";
 
-  const rules = {};
-  [...document.querySelectorAll("#ruleTable tr")].slice(1).forEach(r => {
-    rules[r.cells[0].innerText] = r.cells[1].querySelector("input").value;
-  });
-  localStorage.setItem("lpp_rules", JSON.stringify(rules));
-
-  Array.from(files).forEach(file => processSingle(file, rules));
+  Array.from(files).forEach(file => readFile(file));
 }
 
-function processSingle(file, rules) {
+function readFile(file) {
   const reader = new FileReader();
-  reader.onload = e => {
-    const wb = XLSX.read(e.target.result, { type:"binary" });
-    const sh = wb.Sheets[wb.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(sh, { header:1 });
+  reader.onload = event => {
+    const workbook = XLSX.read(event.target.result, { type: "binary" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
     const headers = data[0];
     const rows = data.slice(1);
-    let matchedIdx = [];
-    let explain = {};
-    let processed = rows.map(r => {
-      let o = {};
-      TEMPLATE_HEADERS.forEach(f => {
-        let idx=-1, used;
-        headers.forEach((h,i)=>{ if(idx===-1){const m=matchRule(h,rules[f]); if(m){idx=i;used=m}}});
-        if(idx>-1){
-          let v=r[idx];
-          if(norm(headers[idx]).includes("monthly") && !isNaN(v)) v*=12;
-          o[f]=v||0;
-          matchedIdx.push(idx);
-          explain[f]=`${f} ← "${headers[idx]}"`;
+
+    let matchedIndexes = [];
+    let outputRows = rows.map(row => {
+      let output = {};
+      TEMPLATE_HEADERS.forEach(field => {
+        let index = headers.findIndex(h =>
+          normalize(h).includes(normalize(field.split(" ")[0]))
+        );
+
+        if (index !== -1) {
+          let value = row[index];
+          if (normalize(headers[index]).includes("monthly") && !isNaN(value)) {
+            value *= 12;
+          }
+          output[field] = value || 0;
+          matchedIndexes.push(index);
         } else {
-          o[f]=0;
-          explain[f]=`⚠ ${f} not matched`;
+          output[field] = 0;
         }
       });
-      return o;
+      return output;
     });
 
-    fileResults[file.name]={headers,rows,matchedIdx,processed,explain};
+    results[file.name] = {
+      headers,
+      rows,
+      matchedIndexes,
+      outputRows
+    };
+
     fileOrder.push(file.name);
-    if(!currentFile) currentFile=file.name;
+    if (!currentFile) currentFile = file.name;
     render();
   };
   reader.readAsBinaryString(file);
 }
 
-/* ================= RENDER ================= */
+/* ================= Rendering ================= */
+
 function render() {
-  const r=fileResults[currentFile];
-  if(!r) return;
+  const data = results[currentFile];
+  if (!data) return;
 
-  let left="<table class='freeze-first-col'><thead><tr>";
-  r.headers.forEach(h=>left+=`<th>${h}</th>`);
-  left+="</tr></thead><tbody>";
-  r.rows.forEach(row=>{
-    left+="<tr>";
-    row.forEach((c,i)=>left+=`<td class='${r.matchedIdx.includes(i)?"highlight":""}'>${c??""}</td>`);
-    left+="</tr>";
+  // Original illustration
+  let originalHTML = "<table class='freeze-first-col'><thead><tr>";
+  data.headers.forEach(h => originalHTML += `<th>${h}</th>`);
+  originalHTML += "</tr></thead><tbody>";
+
+  data.rows.forEach(row => {
+    originalHTML += "<tr>";
+    row.forEach((cell, i) => {
+      const highlightClass = data.matchedIndexes.includes(i) ? "highlight" : "";
+      originalHTML += `<td class="${highlightClass}">${cell ?? ""}</td>`;
+    });
+    originalHTML += "</tr>";
   });
-  left+="</tbody></table>";
 
-  let right="<table><thead><tr>";
-  TEMPLATE_HEADERS.forEach(h=>right+=`<th>${h}</th>`);
-  right+="</tr></thead><tbody>";
-  r.processed.forEach(row=>{
-    right+="<tr>";
-    TEMPLATE_HEADERS.forEach(h=>right+=`<td>${fmt(row[h])}</td>`);
-    right+="</tr>";
+  originalHTML += "</tbody></table>";
+
+  // LPP standardized preview
+  let lppHTML = "<table><thead><tr>";
+  TEMPLATE_HEADERS.forEach(h => lppHTML += `<th>${h}</th>`);
+  lppHTML += "</tr></thead><tbody>";
+
+  data.outputRows.forEach(row => {
+    lppHTML += "<tr>";
+    TEMPLATE_HEADERS.forEach(h => {
+      lppHTML += `<td>${formatNumber(row[h])}</td>`;
+    });
+    lppHTML += "</tr>";
   });
-  right+="</tbody></table>";
 
-  document.getElementById("originalPreview").innerHTML=`<div class='table-scroll'>${left}</div>`;
-  document.getElementById("csvPreview").innerHTML=`<div class='table-scroll'>${right}</div>`;
-  document.getElementById("explainArea").innerHTML=Object.values(r.explain).map(e=>`<div class='log'>${e}</div>`).join("");
+  lppHTML += "</tbody></table>";
+
+  document.getElementById("originalPreview").innerHTML = originalHTML;
+  document.getElementById("csvPreview").innerHTML = lppHTML;
 }
 
-/* ================= DOWNLOAD ================= */
-function downloadCurrent(){ if(currentFile) save(currentFile); }
-function downloadAll(){ fileOrder.forEach(save); }
+/* ================= Download ================= */
 
-function save(name){
-  const rows=fileResults[name].processed;
-  let csv=TEMPLATE_HEADERS.join(",")+"\n";
-  rows.forEach(r=>csv+=TEMPLATE_HEADERS.map(h=>r[h]).join(",")+"\n");
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
-  a.download=`LPP-Updated-${name.replace(/\.[^/.]+$/,"")}.csv`;
-  a.click();
+function downloadCurrent() {
+  if (currentFile) saveCSV(currentFile);
 }
+
+function downloadAll() {
+  fileOrder.forEach(name => saveCSV(name));
+}
+
+function saveCSV(fileName) {
+  const rows = results[fileName].outputRows;
+  let csv = TEMPLATE_HEADERS.join(",") + "\n";
+  rows.forEach(row => {
+    csv += TEMPLATE_HEADERS.map(h => row[h]).join(",") + "\n";
+  });
+
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  link.download = `LPP-Updated-${fileName.replace(/\.[^/.]+$/, "")}.csv`;
+  link.click();
+}
+
+/* ================= Sync Horizontal Scrolling ================= */
+
+(function enableScrollSync() {
+  let syncing = false;
+  document.addEventListener("scroll", event => {
+    if (!event.target.classList.contains("sync-scroll") || syncing) return;
+    syncing = true;
+    document.querySelectorAll(".sync-scroll").forEach(el => {
+      if (el !== event.target) el.scrollLeft = event.target.scrollLeft;
+    });
+    syncing = false;
+  }, true);
+})();
 </script>
 
 </div>
