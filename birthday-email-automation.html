@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Birthday Email Automation</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: #f4f7f6;
+    margin: 0;
+    padding: 30px;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: auto;
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+  }
+
+  h1 {
+    text-align: center;
+    margin-bottom: 25px;
+  }
+
+  .action-bar {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 30px;
+  }
+
+  button {
+    background: #fdf3c8;
+    border: none;
+    padding: 12px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+  }
+
+  button:hover {
+    background: #faeaa1;
+  }
+
+  section {
+    margin-bottom: 35px;
+  }
+
+  .box {
+    border-radius: 8px;
+    padding: 20px;
+    background: #f8faf9;
+  }
+
+  .advisor-list button {
+    margin: 4px;
+    background: #e7f3ff;
+  }
+
+  .advisor-list button.active {
+    background: #b8dcff;
+    font-weight: bold;
+  }
+
+  textarea, input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    margin-top: 8px;
+  }
+
+  .var-buttons button {
+    background: #eef5ff;
+    font-size: 13px;
+    margin-right: 6px;
+    padding: 6px 10px;
+  }
+
+  .preview {
+    background: #f1f7ff;
+    padding: 15px;
+    border-radius: 8px;
+    white-space: pre-wrap;
+  }
+
+  .note {
+    font-size: 13px;
+    color: #666;
+    margin-top: 6px;
+  }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🎂 Birthday Email Automation</h1>
+
+<div class="action-bar">
+  <input type="file" id="fileInput" />
+  <button onclick="downloadExcel()">Download Birthday Template File</button>
+</div>
+
+<section>
+  <div class="box">
+    <strong>Select Advisor</strong>
+    <div class="advisor-list" id="advisorList"></div>
+  </div>
+</section>
+
+<section>
+  <div class="box">
+    <strong>Email Template</strong>
+
+    <label>Subject</label>
+    <input id="subjectInput" value="Happy Birthday {{FirstName}} 🎉">
+
+    <label>Email Content</label>
+    <textarea id="bodyInput" rows="6">Dear {{FirstName}} {{LastName}},
+
+Wishing you a very happy birthday!
+
+Best regards,
+{{AdvisorName}}</textarea>
+
+    <div class="note">Text-only emails. Images are not supported.</div>
+
+    <div class="var-buttons">
+      Insert variable:
+      <button onclick="insertVar('{{FirstName}}')">First Name</button>
+      <button onclick="insertVar('{{LastName}}')">Last Name</button>
+      <button onclick="insertVar('{{AdvisorName}}')">Advisor Name</button>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="box">
+    <strong>Email Preview (Today)</strong>
+    <div class="preview" id="previewArea">Upload a file to see preview.</div>
+  </div>
+</section>
+
+<section>
+  <div class="box">
+    <strong>Instructions</strong>
+    <ul>
+      <li>Download the birthday Excel from Salesforce.</li>
+      <li>Upload it here and adjust the email template.</li>
+      <li>Download the generated Excel file.</li>
+      <li>Place it in Windows Startup folder to auto-run daily.</li>
+    </ul>
+  </div>
+</section>
+
+</div>
+
+<script>
+let rawData = [];
+let selectedAdvisor = "";
+
+document.getElementById("fileInput").addEventListener("change", handleUpload);
+
+function handleUpload(e) {
+  const reader = new FileReader();
+  reader.onload = evt => {
+    const wb = XLSX.read(evt.target.result, { type: "binary" });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    rawData = XLSX.utils.sheet_to_json(sheet);
+    renderAdvisors();
+  };
+  reader.readAsBinaryString(e.target.files[0]);
+}
+
+function renderAdvisors() {
+  const advisors = [...new Set(rawData.map(r => r["Servicing Advisor"]).filter(Boolean))];
+  const container = document.getElementById("advisorList");
+  container.innerHTML = "";
+
+  advisors.forEach(name => {
+    const btn = document.createElement("button");
+    btn.innerText = name;
+    btn.onclick = () => {
+      selectedAdvisor = name;
+      document.querySelectorAll(".advisor-list button").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderPreview();
+    };
+    container.appendChild(btn);
+  });
+}
+
+function renderPreview() {
+  const today = new Date();
+  const month = today.getMonth() + 1;
+  const day = today.getDate();
+
+  const subjectTpl = subjectInput.value;
+  const bodyTpl = bodyInput.value;
+
+  let out = "";
+
+  rawData.filter(r =>
+    r["Servicing Advisor"] === selectedAdvisor &&
+    new Date(r["Birthdate"]).getMonth() + 1 === month &&
+    new Date(r["Birthdate"]).getDate() === day
+  ).forEach(r => {
+    const names = r["Name"].split(" ");
+    const first = names[0];
+    const last = names[names.length - 1];
+
+    out +=
+`To: ${r["Email – Primary"] || r["Person Account: Email"]}
+Subject: ${applyVars(subjectTpl, first, last)}
+${applyVars(bodyTpl, first, last)}
+
+-------------------------
+`;
+  });
+
+  previewArea.textContent = out || "No birthday emails today.";
+}
+
+function applyVars(text, f, l) {
+  return text
+    .replaceAll("{{FirstName}}", f)
+    .replaceAll("{{LastName}}", l)
+    .replaceAll("{{AdvisorName}}", selectedAdvisor);
+}
+
+function insertVar(v) {
+  const el = document.activeElement;
+  if (!el || !el.selectionStart) return;
+  const s = el.selectionStart;
+  el.value = el.value.slice(0, s) + v + el.value.slice(s);
+}
+
+function downloadExcel() {
+  if (!selectedAdvisor) {
+    alert("Please select an advisor.");
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+
+  const clients = [["FullName","FirstName","LastName","Email","BirthMonth","BirthDay"]];
+  rawData.filter(r => r["Servicing Advisor"] === selectedAdvisor).forEach(r => {
+    const d = new Date(r["Birthdate"]);
+    const names = r["Name"].split(" ");
+    clients.push([
+      r["Name"],
+      names[0],
+      names[names.length - 1],
+      r["Email – Primary"] || r["Person Account: Email"],
+      d.getMonth() + 1,
+      d.getDate()
+    ]);
+  });
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(clients), "Clients");
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+    ["", "Subject", subjectInput.value],
+    ["", "Body", bodyInput.value],
+    ["", "Advisor", selectedAdvisor]
+  ]), "Template");
+
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([
+    ["AdvisorName", selectedAdvisor],
+    ["GeneratedOn", new Date().toISOString().slice(0,10)]
+  ]), "Config");
+
+  XLSX.writeFile(wb, `Birthday email - ${selectedAdvisor} - ${new Date().toISOString().slice(0,10)}.xlsm`);
+}
+</script>
+
+</body>
+</html>
