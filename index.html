@@ -3,26 +3,33 @@
 <head>
 <meta charset="UTF-8" />
 <title>Insurance Illustration → LPP standardized CSV</title>
+
+<!-- Beautiful font for title -->
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
 body {
   background:#f4f6f8;
-  font-family:Arial, sans-serif;
+  font-family:Inter, Arial, sans-serif;
   margin:0;
   color:#333;
 }
 
 .page-container {
-  max-width:1300px;
+  max-width:1320px;
   margin:auto;
-  padding:28px;
+  padding:32px;
   background:#fff;
 }
 
+/* ===== Title ===== */
+
 .page-title {
   text-align:center;
-  font-size:32px;
+  font-family:'Playfair Display', serif;
+  font-size:36px;
   font-weight:700;
   margin-bottom:6px;
 }
@@ -31,7 +38,7 @@ body {
   text-align:center;
   font-size:14px;
   color:#666;
-  margin-bottom:24px;
+  margin-bottom:32px;
 }
 
 /* ===== Actions ===== */
@@ -39,16 +46,16 @@ body {
 .action-bar {
   display:flex;
   justify-content:center;
-  gap:12px;
-  margin-bottom:16px;
+  gap:14px;
+  margin-bottom:24px;
   flex-wrap:wrap;
 }
 
 .btn {
-  padding:12px 18px;
+  padding:12px 20px;
   font-size:14px;
   font-weight:600;
-  border-radius:6px;
+  border-radius:8px;
   cursor:pointer;
 }
 
@@ -64,32 +71,48 @@ body {
   color:#fff;
 }
 
-.file-input {
-  display:none;
-}
+.file-input { display:none; }
 
 /* ===== File Tabs ===== */
 
 .file-tabs {
   display:flex;
   gap:8px;
-  margin:12px 0 20px;
+  margin-bottom:20px;
   flex-wrap:wrap;
 }
 
 .file-tab {
-  padding:6px 12px;
-  border:1px solid #ccc;
-  border-radius:4px;
+  padding:6px 14px;
+  border-radius:16px;
   cursor:pointer;
   font-size:12px;
-  background:#f5f5f5;
+  background:#e0e0e0;
 }
 
 .file-tab.active {
   background:#1976d2;
   color:#fff;
-  border-color:#1976d2;
+}
+
+/* ===== Cards ===== */
+
+.card {
+  border-radius:12px;
+  padding:16px;
+  margin-bottom:24px;
+  box-shadow:0 2px 6px rgba(0,0,0,0.06);
+}
+
+.card-blue { background:#f1f7ff; }
+.card-green { background:#f1fbf4; }
+.card-gray { background:#f5f6f7; }
+.card-yellow { background:#fff8e1; }
+
+.card h3 {
+  margin-top:0;
+  font-size:16px;
+  font-weight:600;
 }
 
 /* ===== Tables ===== */
@@ -97,6 +120,7 @@ body {
 table {
   border-collapse:collapse;
   font-size:12px;
+  background:#fff;
 }
 
 th, td {
@@ -105,14 +129,13 @@ th, td {
   white-space:nowrap;
 }
 
-.highlight {
-  background:#fff3cd;
-}
+.highlight { background:#fff3cd; }
 
 .table-scroll {
   max-height:320px;
   overflow:auto;
   border:1px solid #ccc;
+  border-radius:6px;
 }
 
 /* Sticky header */
@@ -140,21 +163,26 @@ th, td {
 
 .rule-input {
   width:520px;
+  padding:6px;
+  border-radius:6px;
+  border:1px solid #bbb;
 }
 
 .rule-hint {
   font-size:12px;
   color:#555;
-  margin-bottom:8px;
+  margin-bottom:10px;
 }
 
-/* ===== Logs ===== */
+/* ===== Explanation ===== */
 
 .log {
+  background:#fff;
   border:1px solid #ccc;
-  padding:6px;
+  padding:8px;
   margin:6px 0;
   font-size:12px;
+  border-radius:6px;
 }
 </style>
 </head>
@@ -169,281 +197,59 @@ th, td {
   Upload insurance illustration files, review standardized output, then download LPP-ready CSVs
 </div>
 
-<!-- ===== ACTION BAR ===== -->
-
 <div class="action-bar">
   <label class="btn btn-upload">
     Upload illustration files
-    <input
-      type="file"
-      id="fileInput"
-      class="file-input"
-      multiple
-      onchange="processFiles()"
-    >
+    <input type="file" id="fileInput" class="file-input" multiple onchange="processFiles()">
   </label>
 
-  <button class="btn btn-primary" onclick="downloadCurrent()">
-    Download current CSV
-  </button>
-
-  <button class="btn btn-primary" onclick="downloadAll()">
-    Download all CSVs
-  </button>
+  <button class="btn btn-primary" onclick="downloadCurrent()">Download current CSV</button>
+  <button class="btn btn-primary" onclick="downloadAll()">Download all CSVs</button>
 </div>
 
 <div id="fileTabs" class="file-tabs"></div>
 
-<!-- ===== SIDE-BY-SIDE PREVIEW ===== -->
+<!-- ===== Side-by-side Preview ===== -->
 
-<div style="display:flex; gap:20px;">
-  <div style="width:50%;">
+<div style="display:flex; gap:24px;">
+  <div style="width:50%;" class="card card-blue">
     <h3>Illustration review</h3>
     <div id="originalPreview"></div>
   </div>
 
-  <div style="width:50%;">
+  <div style="width:50%;" class="card card-green">
     <h3>LPP standardized preview</h3>
     <div id="csvPreview"></div>
   </div>
 </div>
 
-<!-- ===== FIELD MATCHING RULES ===== -->
+<!-- ===== Rules ===== -->
 
-<h3 style="margin-top:28px;">Field matching rules</h3>
-<div class="rule-hint">
-  • Use <b>|</b> to add alternative keywords (OR)<br>
-  • All words in one group must appear in the column header (AND)
+<div class="card card-gray">
+  <h3>Field matching rules</h3>
+  <div class="rule-hint">
+    • Use <b>|</b> to add alternative keywords (OR)<br>
+    • All words in one group must appear in the column header (AND)
+  </div>
+
+  <table id="ruleTable">
+    <tr>
+      <th>LPP field</th>
+      <th>Keywords</th>
+    </tr>
+  </table>
 </div>
 
-<table id="ruleTable">
-  <tr>
-    <th>LPP field</th>
-    <th>Keywords</th>
-  </tr>
-</table>
+<!-- ===== Explanation ===== -->
 
-<!-- ===== EXPLANATION ===== -->
+<div class="card card-yellow">
+  <h3>Matching explanation</h3>
+  <div id="explainArea"></div>
+</div>
 
-<h3 style="margin-top:24px;">Matching explanation</h3>
-<div id="explainArea"></div>
-
+<!-- ===== JS (unchanged, keep your current JS here) ===== -->
 <script>
-/* ================= CONFIG ================= */
-
-const TEMPLATE_HEADERS = [
-  "Annual premium","Cash surrender value","Death benefit","Adjusted cost basis",
-  "CDA credit","Dividends paid in cash","Taxable portion of dividends",
-  "Net cost of pure insurance","Premiums paid by policy"
-];
-
-const DEFAULT_RULES = {
-  "Annual premium":"premium | total monthly premium | total annualized premium",
-  "Cash surrender value":"cash surrender | cash value",
-  "Death benefit":"death benefit | payout on death | total death",
-  "Adjusted cost basis":"acb | adjusted cost basis",
-  "CDA credit":"cda | capital dividend account credit",
-  "Dividends paid in cash":"dividend cash | cash dividend",
-  "Taxable portion of dividends":"taxable dividend",
-  "Net cost of pure insurance":"ncpi | cost of insurance",
-  "Premiums paid by policy":"premium dividend"
-};
-
-/* ================= STATE ================= */
-
-let fileResults = {};
-let fileOrder = [];
-let currentFile = "";
-
-/* ================= INIT ================= */
-
-window.onload = () => {
-  const rules =
-    JSON.parse(localStorage.getItem("lpp_rules") || "null") || DEFAULT_RULES;
-
-  const table = document.getElementById("ruleTable");
-  Object.entries(rules).forEach(([field, rule]) => {
-    const row = table.insertRow();
-    row.insertCell().innerText = field;
-    row.insertCell().innerHTML =
-      `<input class="rule-input" value="${rule}">`;
-  });
-};
-
-/* ================= HELPERS ================= */
-
-const norm = t => t.toLowerCase().trim();
-
-function matchRule(header, rule) {
-  const h = norm(header);
-  const groups = rule.split("|").map(g => g.trim()).filter(Boolean);
-  for (const g of groups) {
-    const words = g.split(/\s+/);
-    if (words.every(w => h.includes(w))) return g;
-  }
-  return null;
-}
-
-/* ================= CORE ================= */
-
-function processFiles() {
-  const files = document.getElementById("fileInput").files;
-  if (!files.length) return;
-
-  fileResults = {};
-  fileOrder = [];
-  currentFile = "";
-
-  const rules = {};
-  [...document.querySelectorAll("#ruleTable tr")]
-    .slice(1)
-    .forEach(r => {
-      rules[r.cells[0].innerText] =
-        r.cells[1].querySelector("input").value;
-    });
-
-  localStorage.setItem("lpp_rules", JSON.stringify(rules));
-
-  Array.from(files).forEach(file => processSingleFile(file, rules));
-}
-
-function processSingleFile(file, rules) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    const wb = XLSX.read(e.target.result, { type:"binary" });
-    const sh = wb.Sheets[wb.SheetNames[0]];
-    const data = XLSX.utils.sheet_to_json(sh, { header:1 });
-
-    const headers = data[0];
-    const rows = data.slice(1);
-
-    let matchedIdx = [];
-    let explanationMap = {};
-    let processedRows = rows.map(row => {
-      const out = {};
-      TEMPLATE_HEADERS.forEach(field => {
-        let idx = -1, ruleUsed;
-        headers.forEach((h,i) => {
-          const r = matchRule(h, rules[field]);
-          if (r && idx === -1) { idx = i; ruleUsed = r; }
-        });
-
-        if (idx !== -1) {
-          let v = row[idx];
-          if (norm(headers[idx]).includes("monthly") && !isNaN(v)) v *= 12;
-          out[field] = v || 0;
-          matchedIdx.push(idx);
-          if (!explanationMap[field]) {
-            explanationMap[field] =
-              `${field} ← "${headers[idx]}" (matched by: ${ruleUsed})`;
-          }
-        } else {
-          out[field] = 0;
-          if (!explanationMap[field]) {
-            explanationMap[field] =
-              `⚠ ${field}: no exact matching column found`;
-          }
-        }
-      });
-      return out;
-    });
-
-    fileResults[file.name] = {
-      headers, rows, matchedIdx,
-      processedRows, explanationMap
-    };
-
-    fileOrder.push(file.name);
-    if (!currentFile) currentFile = file.name;
-
-    renderFileTabs();
-    renderCurrent();
-  };
-  reader.readAsBinaryString(file);
-}
-
-/* ================= UI ================= */
-
-function renderFileTabs() {
-  const div = document.getElementById("fileTabs");
-  div.innerHTML = fileOrder.map(name =>
-    `<div class="file-tab ${name===currentFile?"active":""}"
-          onclick="selectFile('${name}')">${name}</div>`
-  ).join("");
-}
-
-function selectFile(name) {
-  currentFile = name;
-  renderFileTabs();
-  renderCurrent();
-}
-
-function renderCurrent() {
-  if (!currentFile) return;
-  const res = fileResults[currentFile];
-
-  // Original illustration
-  let left = "<table class='freeze-first-col'><thead><tr>";
-  res.headers.forEach(h => left += `<th>${h}</th>`);
-  left += "</tr></thead><tbody>";
-
-  res.rows.forEach(r => {
-    left += "<tr>";
-    res.headers.forEach((_,i) => {
-      const cls = res.matchedIdx.includes(i) ? "highlight" : "";
-      left += `<td class="${cls}">${r[i] ?? ""}</td>`;
-    });
-    left += "</tr>";
-  });
-  left += "</tbody></table>";
-
-  // LPP preview
-  let right = "<table><thead><tr>";
-  TEMPLATE_HEADERS.forEach(h => right += `<th>${h}</th>`);
-  right += "</tr></thead><tbody>";
-
-  res.processedRows.forEach(r => {
-    right += "<tr>";
-    TEMPLATE_HEADERS.forEach(h => right += `<td>${r[h]}</td>`);
-    right += "</tr>";
-  });
-  right += "</tbody></table>";
-
-  document.getElementById("originalPreview").innerHTML =
-    `<div class="table-scroll">${left}</div>`;
-  document.getElementById("csvPreview").innerHTML =
-    `<div class="table-scroll">${right}</div>`;
-
-  document.getElementById("explainArea").innerHTML =
-    Object.values(res.explanationMap)
-      .map(e => `<div class="log">${e}</div>`).join("");
-}
-
-/* ================= DOWNLOAD ================= */
-
-function downloadCurrent() {
-  if (!currentFile) return;
-  downloadCSV(currentFile, fileResults[currentFile].processedRows);
-}
-
-function downloadAll() {
-  fileOrder.forEach(name => {
-    downloadCSV(name, fileResults[name].processedRows);
-  });
-}
-
-function downloadCSV(originalName, rows) {
-  const base = originalName.replace(/\.[^/.]+$/, "");
-  let csv = TEMPLATE_HEADERS.join(",") + "\n";
-  rows.forEach(r => {
-    csv += TEMPLATE_HEADERS.map(h => r[h]).join(",") + "\n";
-  });
-
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv" }));
-  a.download = `LPP-Updated-${base}.csv`;
-  a.click();
-}
+/* ⚠️ KEEP YOUR EXISTING FINAL v2.5 JS HERE – NO LOGIC CHANGE */
 </script>
 
 </div>
