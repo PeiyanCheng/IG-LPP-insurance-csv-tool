@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <title>LPP Insurance Illustration Tool</title>
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
   <style>
     table { border-collapse: collapse; font-size: 12px; }
     th, td { border: 1px solid #ccc; padding: 4px; }
@@ -13,17 +14,26 @@
 </head>
 
 <body>
+
 <h2>LPP Insurance Illustration → CSV</h2>
 
+<!-- ================= File Actions ================= -->
 <input type="file" id="fileInput" />
 <button onclick="processFile()">Process</button>
 <button id="downloadBtn" onclick="downloadConfirmedCSV()" disabled>
   Confirm & Download CSV
 </button>
 
+<!-- ================= Warning Messages ================= -->
 <div id="warnings" style="margin-top:15px;"></div>
 
+<!-- ================= Mapping Configuration ================= -->
 <h3>Mapping Configuration (Editable)</h3>
+<p style="font-size:12px;color:#555">
+Edit source headers here if an insurance company uses different wording.
+Put <b>monthly</b> headers explicitly if conversion is required.
+</p>
+
 <table id="mappingTable">
   <tr>
     <th>LPP Field</th>
@@ -31,22 +41,28 @@
   </tr>
 </table>
 
+<!-- ================= Data Preview ================= -->
 <div style="display:flex; gap:20px; margin-top:20px;">
   <div style="width:50%;">
     <h3>Original Illustration (Extracted Columns)</h3>
     <div id="originalPreview"></div>
   </div>
+
   <div style="width:50%;">
     <h3>LPP Template (Preview)</h3>
     <div id="csvPreview"></div>
   </div>
 </div>
 
+<!-- ================= Processing Log ================= -->
 <h3>Processing Log (Session Only)</h3>
 <div id="logArea"></div>
 
 <script>
-/* ================= CONFIG ================= */
+/* =========================================================
+   1. CONFIGURATION
+   Define template fields, preview size, and default mapping
+========================================================= */
 
 const PREVIEW_LIMIT = 10;
 
@@ -63,33 +79,61 @@ const TEMPLATE_HEADERS = [
 ];
 
 const DEFAULT_MAPPING = {
-  "Annual premium": "Total annual premium | Monthly premium | Total monthly premium",
-  "Cash surrender value": "Cash surrender value (Current rate)",
-  "Death benefit": "Total death benefit (Current rate)",
-  "Adjusted cost basis": "Adjusted cost basis (Current rate)",
-  "CDA credit": "CDA credit (Current rate)",
-  "Dividends paid in cash": "Dividends paid in cash (Current rate)",
-  "Taxable portion of dividends": "Taxable Portion of Dividends (Current rate)",
-  "Net cost of pure insurance": "NCPI (Current rate)",
-  "Premiums paid by policy": "Premiums paid by dividends (Current rate)"
+  "Annual premium":
+    "Total annual premium | Total guaranteed annualized premium | Monthly premium | Total monthly premium",
+  "Cash surrender value":
+    "Cash surrender value (Current rate)",
+  "Death benefit":
+    "Total death benefit (Current rate)",
+  "Adjusted cost basis":
+    "Adjusted cost basis (Current rate) | ACB (Current rate) | ACB | Adjusted cost basis",
+  "CDA credit":
+    "CDA credit (Current rate)",
+  "Dividends paid in cash":
+    "Dividends paid in cash (Current rate)",
+  "Taxable portion of dividends":
+    "Taxable Portion of Dividends (Current rate)",
+  "Net cost of pure insurance":
+    "NCPI (Current rate)",
+  "Premiums paid by policy":
+    "Premiums paid by dividends (Current rate)"
 };
 
-/* ================= STATE ================= */
+/* =========================================================
+   2. RUNTIME STATE
+========================================================= */
 
 let processedRows = [];
 let matchedColumnIndexes = [];
 let warnings = [];
 
-/* ================= INIT ================= */
+/* =========================================================
+   3. INITIALIZATION
+   Render editable mapping table once page is loaded
+========================================================= */
 
-renderMappingTable();
+window.onload = function () {
+  renderMappingTable();
+};
 
-/* ================= HELPERS ================= */
+/* =========================================================
+   4. HELPER FUNCTIONS
+========================================================= */
 
+/**
+ * Normalize header text for safe comparison
+ */
 function normalize(text) {
-  return text.toLowerCase().replace(/\s+/g, " ").replace(/\n/g, "").trim();
+  return text
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .replace(/\n/g, "")
+    .trim();
 }
 
+/**
+ * Render default mapping into editable table
+ */
 function renderMappingTable() {
   const table = document.getElementById("mappingTable");
   Object.keys(DEFAULT_MAPPING).forEach(key => {
@@ -100,6 +144,9 @@ function renderMappingTable() {
   });
 }
 
+/**
+ * Read current mapping configuration from table
+ */
 function getMapping() {
   const map = {};
   const rows = document.getElementById("mappingTable").rows;
@@ -113,7 +160,9 @@ function getMapping() {
   return map;
 }
 
-/* ================= MAIN ================= */
+/* =========================================================
+   5. CORE PROCESSING LOGIC
+========================================================= */
 
 function processFile() {
   const file = document.getElementById("fileInput").files[0];
@@ -124,6 +173,7 @@ function processFile() {
   processedRows = [];
 
   const reader = new FileReader();
+
   reader.onload = e => {
     const workbook = XLSX.read(e.target.result, { type: "binary" });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -133,35 +183,49 @@ function processFile() {
     const rows = data.slice(1);
     const mapping = getMapping();
 
+    // Check for Current rate scenario
     if (!headers.some(h => normalize(h).includes("current rate"))) {
-      warnings.push("Current rate column not detected.");
+      warnings.push("Current rate column not detected. Please review scenario.");
     }
 
     processedRows = rows.map(row => {
-      let out = {};
+      let output = {};
+
       TEMPLATE_HEADERS.forEach(target => {
         let value;
+        let sourceUsed;
+
         (mapping[target] || []).forEach(source => {
           const idx = headers.findIndex(h => normalize(h) === normalize(source));
           if (idx !== -1 && value === undefined) {
             value = row[idx];
+            sourceUsed = source;
             if (!matchedColumnIndexes.includes(idx)) {
               matchedColumnIndexes.push(idx);
             }
           }
         });
 
+        // Annual premium logic: convert ONLY if source is monthly
         if (target === "Annual premium" && value !== undefined) {
-          const annual = Number(value) * 12;
-          if (annual !== Number(value)) {
-            warnings.push("Annual premium converted from monthly (×12).");
+          const isMonthlySource =
+            sourceUsed && normalize(sourceUsed).includes("monthly");
+
+          if (isMonthlySource) {
+            output[target] = Number(value) * 12;
+            if (!warnings.includes("Annual premium converted from monthly (×12).")) {
+              warnings.push("Annual premium converted from monthly (×12).");
+            }
+          } else {
+            output[target] = value;
           }
-          out[target] = isNaN(annual) ? "" : annual;
         } else {
-          out[target] = value === undefined || value === null ? "" : value;
+          output[target] =
+            value === undefined || value === null ? "" : value;
         }
       });
-      return out;
+
+      return output;
     });
 
     renderPreviews(headers, rows);
@@ -173,9 +237,12 @@ function processFile() {
   reader.readAsBinaryString(file);
 }
 
-/* ================= UI ================= */
+/* =========================================================
+   6. UI RENDERING
+========================================================= */
 
 function renderPreviews(headers, rows) {
+  // Left: Original illustration (highlight extracted columns)
   let left = "<table><tr>";
   headers.forEach((h, i) => {
     if (matchedColumnIndexes.includes(i)) {
@@ -196,6 +263,7 @@ function renderPreviews(headers, rows) {
   left += "</table>";
   document.getElementById("originalPreview").innerHTML = left;
 
+  // Right: LPP template preview
   let right = "<table><tr>";
   TEMPLATE_HEADERS.forEach(h => right += `<th>${h}</th>`);
   right += "</tr>";
@@ -209,6 +277,10 @@ function renderPreviews(headers, rows) {
   document.getElementById("csvPreview").innerHTML = right;
 }
 
+/* =========================================================
+   7. WARNINGS & LOGGING
+========================================================= */
+
 function renderWarnings() {
   const div = document.getElementById("warnings");
   if (!warnings.length) {
@@ -220,8 +292,6 @@ function renderWarnings() {
     warnings.map(w => `<li>${w}</li>`).join("") +
     "</ul>";
 }
-
-/* ================= LOG ================= */
 
 function logRun(fileName, rowCount) {
   const time = new Date().toLocaleString();
@@ -236,11 +306,14 @@ function logRun(fileName, rowCount) {
     html + document.getElementById("logArea").innerHTML;
 }
 
-/* ================= DOWNLOAD ================= */
+/* =========================================================
+   8. DOWNLOAD
+========================================================= */
 
 function downloadConfirmedCSV() {
   const original = document.getElementById("fileInput").files[0].name;
   const base = original.replace(/\.[^/.]+$/, "");
+
   let csv = TEMPLATE_HEADERS.join(",") + "\n";
   processedRows.forEach(r => {
     csv += TEMPLATE_HEADERS.map(h => r[h]).join(",") + "\n";
@@ -253,5 +326,6 @@ function downloadConfirmedCSV() {
   link.click();
 }
 </script>
+
 </body>
 </html>
