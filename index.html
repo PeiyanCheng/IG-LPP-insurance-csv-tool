@@ -61,7 +61,6 @@ Put <b>monthly</b> headers explicitly if conversion is required.
 <script>
 /* =========================================================
    1. CONFIGURATION
-   Define template fields, preview size, and default mapping
 ========================================================= */
 
 const PREVIEW_LIMIT = 10;
@@ -80,7 +79,7 @@ const TEMPLATE_HEADERS = [
 
 const DEFAULT_MAPPING = {
   "Annual premium":
-    "Total annual premium | Total guaranteed annualized premium | Monthly premium | Total monthly premium",
+    "Total annual premium | Total guaranteed annualized premium | Total annualized yearly premium | Monthly premium | Total monthly premium",
   "Cash surrender value":
     "Cash surrender value (Current rate)",
   "Death benefit":
@@ -109,7 +108,6 @@ let warnings = [];
 
 /* =========================================================
    3. INITIALIZATION
-   Render editable mapping table once page is loaded
 ========================================================= */
 
 window.onload = function () {
@@ -120,9 +118,6 @@ window.onload = function () {
    4. HELPER FUNCTIONS
 ========================================================= */
 
-/**
- * Normalize header text for safe comparison
- */
 function normalize(text) {
   return text
     .toLowerCase()
@@ -131,9 +126,6 @@ function normalize(text) {
     .trim();
 }
 
-/**
- * Render default mapping into editable table
- */
 function renderMappingTable() {
   const table = document.getElementById("mappingTable");
   Object.keys(DEFAULT_MAPPING).forEach(key => {
@@ -144,9 +136,6 @@ function renderMappingTable() {
   });
 }
 
-/**
- * Read current mapping configuration from table
- */
 function getMapping() {
   const map = {};
   const rows = document.getElementById("mappingTable").rows;
@@ -183,7 +172,19 @@ function processFile() {
     const rows = data.slice(1);
     const mapping = getMapping();
 
-    // Check for Current rate scenario
+    /* ---- Detect policy-level annual premium (summary only) ---- */
+    let policyAnnualPremium;
+    let policyPremiumSource;
+
+    (mapping["Annual premium"] || []).forEach(source => {
+      const idx = headers.findIndex(h => normalize(h) === normalize(source));
+      if (idx !== -1 && policyAnnualPremium === undefined) {
+        policyAnnualPremium = rows[0][idx];
+        policyPremiumSource = source;
+      }
+    });
+
+    /* ---- Scenario check ---- */
     if (!headers.some(h => normalize(h).includes("current rate"))) {
       warnings.push("Current rate column not detected. Please review scenario.");
     }
@@ -206,20 +207,37 @@ function processFile() {
           }
         });
 
-        // Annual premium logic: convert ONLY if source is monthly
-        if (target === "Annual premium" && value !== undefined) {
-          const isMonthlySource =
-            sourceUsed && normalize(sourceUsed).includes("monthly");
+        /* ---- Annual premium logic (FINAL, CORRECT) ---- */
+        if (target === "Annual premium") {
 
-          if (isMonthlySource) {
-            output[target] = Number(value) * 12;
-            if (!warnings.includes("Annual premium converted from monthly (×12).")) {
-              warnings.push("Annual premium converted from monthly (×12).");
+          if (value !== undefined) {
+            const src = normalize(sourceUsed || "");
+            const isMonthly = src.includes("monthly");
+            const isAnnualized =
+              src.includes("annual") ||
+              src.includes("annualized") ||
+              src.includes("yearly");
+
+            if (isMonthly) {
+              output[target] = Number(value) * 12;
+              if (!warnings.includes("Annual premium converted from monthly (×12).")) {
+                warnings.push("Annual premium converted from monthly (×12).");
+              }
+            } else {
+              output[target] = value;
             }
-          } else {
-            output[target] = value;
           }
-        } else {
+
+          else if (policyAnnualPremium !== undefined) {
+            output[target] = policyAnnualPremium;
+          }
+
+          else {
+            output[target] = "";
+          }
+        }
+
+        else {
           output[target] =
             value === undefined || value === null ? "" : value;
         }
@@ -242,7 +260,6 @@ function processFile() {
 ========================================================= */
 
 function renderPreviews(headers, rows) {
-  // Left: Original illustration (highlight extracted columns)
   let left = "<table><tr>";
   headers.forEach((h, i) => {
     if (matchedColumnIndexes.includes(i)) {
@@ -263,7 +280,6 @@ function renderPreviews(headers, rows) {
   left += "</table>";
   document.getElementById("originalPreview").innerHTML = left;
 
-  // Right: LPP template preview
   let right = "<table><tr>";
   TEMPLATE_HEADERS.forEach(h => right += `<th>${h}</th>`);
   right += "</tr>";
