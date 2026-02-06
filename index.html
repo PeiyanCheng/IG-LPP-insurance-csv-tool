@@ -40,7 +40,7 @@ body {
   display:flex;
   justify-content:center;
   gap:12px;
-  margin-bottom:28px;
+  margin-bottom:20px;
   flex-wrap:wrap;
 }
 
@@ -64,26 +64,7 @@ body {
   color:#fff;
 }
 
-.btn-primary:disabled {
-  background:#b0bec5;
-  cursor:not-allowed;
-}
-
-.file-input {
-  display:none;
-}
-
-/* ===== Rules ===== */
-
-.rule-input {
-  width:520px;
-}
-
-.rule-hint {
-  font-size:12px;
-  color:#555;
-  margin-bottom:8px;
-}
+.file-input { display:none; }
 
 /* ===== Tables ===== */
 
@@ -108,17 +89,45 @@ th, td {
   border:1px solid #ccc;
 }
 
-.table-scroll table {
-  width:max-content;
-  min-width:100%;
+/* Sticky header */
+.table-scroll thead th {
+  position:sticky;
+  top:0;
+  background:#f1f3f6;
+  z-index:3;
 }
 
-/* ===== File tabs ===== */
+/* Freeze first column (only meaningful for original table) */
+.freeze-first-col th:first-child,
+.freeze-first-col td:first-child {
+  position:sticky;
+  left:0;
+  background:#f9fafc;
+  z-index:2;
+}
+
+.freeze-first-col thead th:first-child {
+  z-index:4;
+}
+
+/* ===== Rules ===== */
+
+.rule-input {
+  width:520px;
+}
+
+.rule-hint {
+  font-size:12px;
+  color:#555;
+  margin-bottom:8px;
+}
+
+/* ===== File Tabs ===== */
 
 .file-tabs {
   display:flex;
   gap:8px;
-  margin:16px 0;
+  margin:12px 0 20px;
   flex-wrap:wrap;
 }
 
@@ -145,12 +154,6 @@ th, td {
   margin:6px 0;
   font-size:12px;
 }
-
-.suggest {
-  cursor:pointer;
-  color:#1976d2;
-  text-decoration:underline;
-}
 </style>
 </head>
 
@@ -161,7 +164,7 @@ th, td {
   Insurance Illustration → LPP standardized CSV
 </div>
 <div class="page-subtitle">
-  Upload insurance illustration files and convert them into LPP-ready standardized CSVs
+  Convert insurance illustration files into LPP-ready standardized CSVs
 </div>
 
 <div class="action-bar">
@@ -171,7 +174,7 @@ th, td {
   </label>
 
   <button class="btn btn-secondary" onclick="processFiles()">
-    Generate LPP CSV
+    Process
   </button>
 
   <button class="btn btn-primary" onclick="downloadCurrent()">
@@ -183,11 +186,19 @@ th, td {
   </button>
 </div>
 
+<div id="fileTabs" class="file-tabs"></div>
+
+<!-- ===== Illustration Review ===== -->
+
+<h3>Illustration review</h3>
+<div id="originalPreview"></div>
+
+<!-- ===== Field Matching Rules (moved here) ===== -->
+
 <h3>Field matching rules</h3>
 <div class="rule-hint">
   • Use <b>|</b> to add alternative keywords (OR)<br>
-  • All words in one group must appear in the column header (AND)<br>
-  • Matching is case-insensitive
+  • All words in one group must appear in the column header (AND)
 </div>
 
 <table id="ruleTable">
@@ -197,18 +208,12 @@ th, td {
   </tr>
 </table>
 
-<div id="fileTabs" class="file-tabs"></div>
+<!-- ===== LPP Preview ===== -->
 
-<div style="display:flex; gap:20px;">
-  <div style="width:50%;">
-    <h3>Original illustration (review)</h3>
-    <div id="originalPreview"></div>
-  </div>
-  <div style="width:50%;">
-    <h3>LPP standardized preview</h3>
-    <div id="csvPreview"></div>
-  </div>
-</div>
+<h3 style="margin-top:24px;">LPP standardized preview</h3>
+<div id="csvPreview"></div>
+
+<!-- ===== Explanation ===== -->
 
 <h3>Matching explanation</h3>
 <div id="explainArea"></div>
@@ -261,12 +266,9 @@ const norm = t => t.toLowerCase().trim();
 function matchRule(header, rule) {
   const h = norm(header);
   const groups = rule.split("|").map(g => g.trim()).filter(Boolean);
-
   for (const g of groups) {
     const words = g.split(/\s+/);
-    if (words.every(w => h.includes(w))) {
-      return g;
-    }
+    if (words.every(w => h.includes(w))) return g;
   }
   return null;
 }
@@ -308,9 +310,7 @@ function processSingleFile(file, rules) {
         let idx = -1, ruleUsed;
         headers.forEach((h,i) => {
           const r = matchRule(h, rules[field]);
-          if (r && idx === -1) {
-            idx = i; ruleUsed = r;
-          }
+          if (r && idx === -1) { idx = i; ruleUsed = r; }
         });
 
         if (idx !== -1) {
@@ -367,9 +367,11 @@ function renderCurrent() {
   if (!currentFile) return;
   const res = fileResults[currentFile];
 
-  let left = "<table><tr>";
+  // Original Illustration
+  let left = "<table><thead><tr>";
   res.headers.forEach(h => left += `<th>${h}</th>`);
-  left += "</tr>";
+  left += "</tr></thead><tbody>";
+
   res.rows.forEach(r => {
     left += "<tr>";
     res.headers.forEach((_,i) => {
@@ -378,20 +380,23 @@ function renderCurrent() {
     });
     left += "</tr>";
   });
-  left += "</table>";
+  left += "</tbody></table>";
 
-  let right = "<table><tr>";
+  // LPP Preview
+  let right = "<table><thead><tr>";
   TEMPLATE_HEADERS.forEach(h => right += `<th>${h}</th>`);
-  right += "</tr>";
+  right += "</tr></thead><tbody>";
+
   res.processedRows.forEach(r => {
     right += "<tr>";
     TEMPLATE_HEADERS.forEach(h => right += `<td>${r[h]}</td>`);
     right += "</tr>";
   });
-  right += "</table>";
+  right += "</tbody></table>";
 
   document.getElementById("originalPreview").innerHTML =
-    `<div class="table-scroll">${left}</div>`;
+    `<div class="table-scroll freeze-first-col">${left}</div>`;
+
   document.getElementById("csvPreview").innerHTML =
     `<div class="table-scroll">${right}</div>`;
 
@@ -419,7 +424,6 @@ function downloadCSV(originalName, rows) {
   rows.forEach(r => {
     csv += TEMPLATE_HEADERS.map(h => r[h]).join(",") + "\n";
   });
-
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([csv], { type:"text/csv" }));
   a.download = `LPP-Updated-${base}.csv`;
