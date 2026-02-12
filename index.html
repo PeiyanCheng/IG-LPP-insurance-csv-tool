@@ -2,79 +2,49 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finance Automation Dashboard</title>
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <nav class="navbar">
-        <a href="index.html" class="nav-brand">
-            <span>✨ FinAssist Dashboard</span>
-        </a>
+        <a href="index.html" class="nav-brand"><span>✨ FinAssist Dashboard</span></a>
         <div class="nav-search">
             <input type="text" id="searchInput" placeholder="Search tools..." onkeyup="filterTools()">
         </div>
     </nav>
 
     <div class="container">
-        
         <div style="margin-bottom: 30px;">
-            <h1 style="font-family: 'Playfair Display', serif;">Good Morning.</h1>
-            <p style="color: #666;">Select a tool to start your automation work.</p>
+            <h1 style="font-family: 'Playfair Display', serif;">Automation Portal</h1>
+            <p style="color: #666;">Select a module to begin.</p>
         </div>
 
         <div class="tool-grid" id="toolGrid">
             
-            <a href="lpp-tool.html" class="tool-card" data-keywords="insurance lpp csv excel comparison">
+            <a href="lpp-tool.html" class="tool-card" data-keywords="insurance lpp csv excel">
                 <div class="tool-icon">📊</div>
                 <div class="tool-title">LPP CSV Standardization</div>
-                <div class="tool-desc">
-                    Upload insurance illustrations, compare with standard format, and export CSVs.
-                </div>
+                <div class="tool-desc">Standardize insurance illustrations for LPP analysis.</div>
             </a>
 
-            <a href="#" class="tool-card" data-keywords="birthday email automation">
+            <a href="birthday-email.html" class="tool-card" data-keywords="birthday email advisor outlook">
                 <div class="tool-icon">🎂</div>
                 <div class="tool-title">Birthday Automation</div>
-                <div class="tool-desc">
-                    Manage client birthday lists and generate email drafts automatically.
-                </div>
+                <div class="tool-desc">Generate smart Outlook drafts for client birthdays.</div>
             </a>
-
-            <a href="#" class="tool-card" data-keywords="tax meeting summary">
-                <div class="tool-icon">📝</div>
-                <div class="tool-title">Meeting Summaries</div>
-                <div class="tool-desc">
-                    Upload transcripts to generate formatted client meeting notes.
-                </div>
-            </a>
-
         </div>
     </div>
 
     <script>
-        // FUNCTION: Filter Tools
-        // This hides/shows cards based on what you type in the search bar
+        // # Explanation: Basic search logic to filter cards by title or keywords
         function filterTools() {
-            // 1. Get what the user typed (convert to lowercase)
             const input = document.getElementById('searchInput').value.toLowerCase();
-            // 2. Get all cards
             const cards = document.getElementsByClassName('tool-card');
-
-            // 3. Loop through every card
             for (let i = 0; i < cards.length; i++) {
-                // Get the title and the hidden keywords
                 const title = cards[i].querySelector('.tool-title').innerText.toLowerCase();
                 const keywords = cards[i].getAttribute('data-keywords');
-                
-                // If title OR keywords contain the input text...
-                if (title.includes(input) || keywords.includes(input)) {
-                    cards[i].style.display = ""; // Show it
-                } else {
-                    cards[i].style.display = "none"; // Hide it
-                }
+                cards[i].style.display = (title.includes(input) || keywords.includes(input)) ? "" : "none";
             }
         }
     </script>
