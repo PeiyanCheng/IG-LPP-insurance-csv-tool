@@ -1,103 +1,123 @@
-/* style.css - The shared design skin for your tools */
+/* =========================================
+   GLOBAL VARIABLES & RESET
+   ========================================= */
 
-/* Import Fonts: Inter (Text) and Playfair Display (Headings) */
+/* Import fonts from Google: 
+   'Inter' is for normal text. 
+   'Playfair Display' is for fancy headings. 
+*/
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@600;700&display=swap');
 
+/* :root holds the main colors. Change these to update the whole site instantly. */
 :root {
-  --primary: #1976d2;       /* Main Blue */
-  --bg-color: #f4f6f8;      /* Light Grey Background */
-  --card-bg: #ffffff;       /* White Card Background */
-  --text-main: #333;        /* Dark Text */
-  --text-sub: #666;         /* Grey Text */
+  --primary: #1976d2;       /* Main Blue - used for buttons and active states */
+  --bg-color: #f4f6f8;      /* Light Grey - background of the whole page */
+  --card-bg: #ffffff;       /* White - background for cards */
+  --text-main: #333;        /* Dark Grey - main text color */
+  --text-sub: #666;         /* Light Grey - secondary text color */
 }
 
+/* Basic setup for the body to remove default browser margins */
 body {
   margin: 0;
   background-color: var(--bg-color);
-  font-family: 'Inter', sans-serif;
+  font-family: 'Inter', sans-serif; /* Sets the default font */
   color: var(--text-main);
-  -webkit-font-smoothing: antialiased;
+  -webkit-font-smoothing: antialiased; /* Makes fonts look smoother on Mac */
 }
 
-/* --- Top Navigation Bar (Navbar) --- */
+/* =========================================
+   NAVIGATION BAR (Top of page)
+   ========================================= */
 .navbar {
   background: #fff;
   padding: 15px 30px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-  position: sticky;
+  display: flex;                /* Aligns items in a row */
+  justify-content: space-between; /* Pushes Logo to left, Search to right */
+  align-items: center;          /* Vertically centers items */
+  box-shadow: 0 2px 10px rgba(0,0,0,0.03); /* Adds a subtle shadow below bar */
+  position: sticky;             /* Keeps navbar at top when scrolling */
   top: 0;
-  z-index: 100;
+  z-index: 100;                 /* Ensures navbar stays on top of other content */
 }
 
+/* The Logo/Title area */
 .nav-brand {
   font-family: 'Playfair Display', serif;
   font-size: 20px;
   font-weight: 700;
   color: var(--text-main);
-  text-decoration: none;
+  text-decoration: none;        /* Removes underline from link */
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 10px;                    /* Space between icon and text */
 }
 
+/* Search Bar Styling */
 .nav-search input {
   padding: 8px 16px;
-  border-radius: 20px;
+  border-radius: 20px;          /* Makes the input round */
   border: 1px solid #ddd;
   background: #f9f9f9;
   font-size: 14px;
   width: 250px;
-  transition: all 0.2s;
+  transition: all 0.2s;         /* Smooth animation when clicking */
 }
 
+/* What happens when you click the search bar */
 .nav-search input:focus {
   outline: none;
   border-color: var(--primary);
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1);
+  box-shadow: 0 0 0 3px rgba(25, 118, 210, 0.1); /* Blue glow effect */
 }
 
-/* --- Main Page Container --- */
+/* =========================================
+   LAYOUT CONTAINERS
+   ========================================= */
 .container {
-  max-width: 1200px;
-  margin: 40px auto;
-  padding: 0 20px;
+  max-width: 1200px;            /* Limits width on large screens */
+  margin: 40px auto;            /* Centers the container */
+  padding: 0 20px;              /* Adds side padding on mobile */
 }
 
-/* --- Dashboard Grid (Home Page Only) --- */
+/* =========================================
+   DASHBOARD CARD GRID (For index.html)
+   ========================================= */
 .tool-grid {
   display: grid;
+  /* Automatically fits cards: minimum 300px wide, max 1 fraction */
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 24px;
+  gap: 24px;                    /* Space between cards */
 }
 
+/* Individual Card Style */
 .tool-card {
   background: var(--card-bg);
-  border-radius: 16px;
+  border-radius: 16px;          /* Rounded corners */
   padding: 24px;
-  text-decoration: none;
+  text-decoration: none;        /* No underline */
   color: inherit;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s; /* Animation setup */
   border: 1px solid transparent;
   display: block;
 }
 
+/* Hover effect: What happens when mouse goes over a card */
 .tool-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+  transform: translateY(-3px);  /* Moves card up slightly */
+  box-shadow: 0 8px 16px rgba(0,0,0,0.08); /* Increases shadow */
   border-color: #e0e0e0;
 }
 
+/* Icons inside cards */
 .tool-icon {
   font-size: 28px;
   margin-bottom: 16px;
   display: inline-block;
-  background: #eef4fc;
-  color: var(--primary);
+  background: #eef4fc;          /* Light blue background circle */
+  color: var(--primary);        /* Icon color */
   padding: 10px;
   border-radius: 12px;
 }
@@ -111,10 +131,12 @@ body {
 .tool-desc {
   font-size: 13px;
   color: var(--text-sub);
-  line-height: 1.5;
+  line-height: 1.5;             /* Spacing between lines of text */
 }
 
-/* --- Specific Tool Page Styles (LPP Tool, etc.) --- */
+/* =========================================
+   TOOL PAGE STYLES (For lpp-tool.html)
+   ========================================= */
 .page-header {
   text-align: center;
   margin-bottom: 32px;
@@ -126,7 +148,9 @@ body {
   margin-bottom: 8px;
 }
 
-/* Button Styles */
+/* =========================================
+   BUTTONS & TABLES
+   ========================================= */
 .btn {
   padding: 10px 20px;
   border-radius: 8px;
@@ -137,11 +161,31 @@ body {
   transition: opacity 0.2s;
 }
 .btn:hover { opacity: 0.9; }
+
+/* Different button colors */
 .btn-primary { background: var(--primary); color: #fff; }
 .btn-upload { background: #e8f5e9; border: 1px solid #66bb6a; color: #2e7d32; }
 
-/* Table Styles */
-table { border-collapse: collapse; width: 100%; font-size: 13px; }
-th, td { border: 1px solid #eee; padding: 8px; text-align: right; }
-th { background: #f8f9fa; font-weight: 600; text-align: center; }
-.table-scroll { overflow: auto; max-height: 400px; border: 1px solid #eee; border-radius: 8px; background: #fff;}
+/* Table styling for data previews */
+table { 
+  border-collapse: collapse; 
+  width: 100%; 
+  font-size: 13px; 
+}
+th, td { 
+  border: 1px solid #eee; 
+  padding: 8px; 
+  text-align: right; /* Numbers look better right-aligned */
+}
+th { 
+  background: #f8f9fa; 
+  font-weight: 600; 
+  text-align: center; 
+}
+.table-scroll { 
+  overflow: auto;       /* Adds scrollbars if table is too big */
+  max-height: 400px; 
+  border: 1px solid #eee; 
+  border-radius: 8px; 
+  background: #fff;
+}
