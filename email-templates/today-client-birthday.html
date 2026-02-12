@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Today's Client Birthday</title>
+    <link rel="stylesheet" href="../style.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+    <style>
+        .today-card { background: #fff9c4; border-left: 5px solid #fbc02d; padding: 15px; margin-bottom: 20px; font-weight: bold; }
+        .client-table { width: 100%; border-collapse: collapse; }
+        .client-table td { padding: 12px; border-bottom: 1px solid #eee; }
+        .btn-draft { background: #1976d2; color: #fff; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <nav class="navbar"><a href="../index.html" class="nav-brand"><span>← Back to Dashboard</span></a></nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">Today's Client Birthday</h1>
+            <div style="font-size: 14px; color: #666;">Quick Email Drafting</div>
+        </div>
+
+        <div class="card" style="text-align: center; margin-bottom: 25px;">
+            <label class="btn btn-upload">📂 Upload Report<input id="fileInput" style="display:none;" type="file" onchange="loadFile()"></label>
+        </div>
+
+        <div id="results" class="card" style="display:none;">
+            <div id="todayBanner" class="today-card"></div>
+            <table class="client-table" id="clientList"></table>
+        </div>
+    </div>
+
+    <script>
+        let rawData = [], headers = [];
+        let nameIdx = -1, emailIdx = -1, dateIdx = -1;
+
+        function loadFile() {
+            const file = document.getElementById("fileInput").files[0];
+            const reader = new FileReader();
+            reader.onload = e => {
+                const data = new Uint8Array(e.target.result);
+                const wb = XLSX.read(data, {type: 'array', cellDates: true});
+                const allRows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
+                
+                let hRow = allRows.findIndex(row => row.some(cell => String(cell).includes("Servicing Advisor")));
+                if (hRow === -1) hRow = 0;
+
+                headers = allRows[hRow].map(h => String(h || "").trim());
+                rawData = allRows.slice(hRow + 1);
+                
+                nameIdx = headers.findIndex(h => /name/i.test(h));
+                emailIdx = headers.findIndex(h => /email|primary/i.test(h));
+                dateIdx = headers.findIndex(h => /birth/i.test(h));
+
+                renderToday();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function renderToday() {
+            const today = new Date();
+            const matches = rawData.filter(r => {
+                const d = new Date(r[dateIdx]);
+                return d.getMonth() === today.getMonth() && d.getDate() === today.getDate();
+            });
+
+            document.getElementById("results").style.display = "block";
+            document.getElementById("todayBanner").innerText = `✨ Found ${matches.length} Birthdays for Today!`;
+            
+            const list = document.getElementById("clientList");
+            list.innerHTML = "";
+            matches.forEach(m => {
+                const name = m[nameIdx];
+                const email = m[emailIdx] || "";
+                const fName = String(name).split(" ")[0];
+                const mailto = `mailto:${email}?subject=Happy Birthday!&body=Dear ${fName},%0D%0A%0D%0AWishing you a fantastic birthday!%0D%0A%0D%0ABest regards,%0D%0AYan Cheng`;
+                
+                const tr = document.createElement("tr");
+                tr.innerHTML = `<td><strong>${name}</strong><br><small>${email}</small></td><td style="text-align:right;"><a href="${mailto}" class="btn-draft">Draft Email</a></td>`;
+                list.appendChild(tr);
+            });
+        }
+    </script>
+</body>
+</html>
