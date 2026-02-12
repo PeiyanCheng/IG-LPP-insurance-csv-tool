@@ -2,42 +2,55 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Finance Automation Dashboard</title>
+    <title>IG Wealth Admin Automation Tool</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <nav class="navbar">
-        <a href="index.html" class="nav-brand"><span>✨ FinAssist Dashboard</span></a>
+        <a href="index.html" class="nav-brand"><span>✨ IG Wealth Admin Automation</span></a>
         <div class="nav-search">
             <input type="text" id="searchInput" placeholder="Search tools..." onkeyup="filterTools()">
         </div>
     </nav>
 
     <div class="container">
-        <div style="margin-bottom: 30px;">
-            <h1 style="font-family: 'Playfair Display', serif;">Automation Portal</h1>
-            <p style="color: #666;">Select a module to begin.</p>
-        </div>
+        <header style="margin-bottom: 40px;">
+            <h1 style="font-family: 'Playfair Display', serif; font-size: 36px;">Admin Automation Portal</h1>
+            <p style="color: #666;">Categorized tools for Insurance, Emails, and Meeting Prep.</p>
+        </header>
 
-        <div class="tool-grid" id="toolGrid">
-            
-            <a href="lpp-tool.html" class="tool-card" data-keywords="insurance lpp csv excel">
+        <h2 style="font-family: 'Playfair Display', serif; border-bottom: 2px solid #eee; padding-bottom: 10px;">🛡️ Insurance Related</h2>
+        <div class="tool-grid" style="margin-bottom: 40px;">
+            <a href="insurance/lpp-tool.html" class="tool-card" data-keywords="insurance lpp csv">
                 <div class="tool-icon">📊</div>
                 <div class="tool-title">LPP CSV Standardization</div>
                 <div class="tool-desc">Standardize insurance illustrations for LPP analysis.</div>
             </a>
+        </div>
 
-            <a href="birthday-email.html" class="tool-card" data-keywords="birthday email advisor outlook">
+        <h2 style="font-family: 'Playfair Display', serif; border-bottom: 2px solid #eee; padding-bottom: 10px;">✉️ Email Templates</h2>
+        <div class="tool-grid" style="margin-bottom: 40px;">
+            <a href="email-templates/birthday-email.html" class="tool-card" data-keywords="birthday email outlook">
                 <div class="tool-icon">🎂</div>
                 <div class="tool-title">Birthday Automation</div>
                 <div class="tool-desc">Generate smart Outlook drafts for client birthdays.</div>
             </a>
         </div>
+
+        <h2 style="font-family: 'Playfair Display', serif; border-bottom: 2px solid #eee; padding-bottom: 10px;">📝 Meeting Notes</h2>
+        <div class="tool-grid">
+            <a href="meeting-notes/summary-tool.html" class="tool-card" data-keywords="meeting summary notes">
+                <div class="tool-icon">🗒️</div>
+                <div class="tool-title">Meeting Summaries</div>
+                <div class="tool-desc">Coming Soon: Format meeting transcripts into notes.</div>
+            </a>
+        </div>
     </div>
 
     <script>
-        // # Explanation: Basic search logic to filter cards by title or keywords
+        // # Section: Search Functionality
+        // This filters through all tool cards based on user input
         function filterTools() {
             const input = document.getElementById('searchInput').value.toLowerCase();
             const cards = document.getElementsByClassName('tool-card');
