@@ -1,72 +1,29 @@
-<nav class="navbar">
-    <a href="../index.html" class="nav-brand"><span>← Back to Dashboard</span></a>
-</nav>
-
-<div class="container">
-    <div class="page-header">
-        <h1 class="page-title">Insurance Illustration → CSV</h1>
-        <div style="font-size: 14px; color: #666;">IG Wealth Admin Automation Tool</div>
-    </div>
-    
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>Insurance Illustration → LPP Standardized CSV</title>
+<title>LPP Standardization - IG Wealth Admin</title>
 
-<link rel="stylesheet" href="style.css">
-
+<link rel="stylesheet" href="../style.css">
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 
 <style>
-    /* =========================================
-       INTERNAL STYLES (Overrides & Specifics)
-       ========================================= */
-
-    /* --- FIXED: STICKY HEADER FORCE --- */
-    /* This forces the header to stick, even if style.css fails */
-    .table-scroll th {
-        position: sticky !important;
-        top: 0 !important;
-        z-index: 10 !important;
-        background: #f8f9fa !important; /* Grey background so text doesn't overlap */
+    /* # Section: Page-Specific Styling */
+    .table-scroll th { 
+        position: sticky !important; 
+        top: 0; 
+        z-index: 10; 
+        background: #f8f9fa !important; 
         box-shadow: 0 1px 2px rgba(0,0,0,0.1);
     }
-
-    /* Action Bar: Holds Upload & Download buttons */
-    .action-bar {
-        display: flex; justify-content: space-between; align-items: center;
-        gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
-    }
-
-    /* Hide the ugly default file input */
+    .action-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
     .file-input { display: none; }
-
-    /* File Tabs Area */
-    .file-tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
-
-    /* Individual Tab Styling */
-    .file-tab {
-        padding: 6px 14px; border-radius: 14px; font-size: 12px;
-        cursor: pointer; background: #e0e0e0; transition: 0.2s;
-    }
+    .file-tab { padding: 6px 14px; border-radius: 14px; font-size: 12px; cursor: pointer; background: #e0e0e0; transition: 0.2s; margin-right: 5px; }
     .file-tab.active { background: var(--primary); color: #fff; }
-
-    /* Layout: Side-by-side tables */
     .preview-flex { display: flex; gap: 24px; margin-bottom: 24px; }
     @media (max-width: 900px) { .preview-flex { flex-direction: column; } }
-
-    /* Cards */
     .card { flex: 1; min-width: 0; border-radius: 12px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); background: #fff; }
-    .card-illustration { background: #f1fbf4; }
-    .card-lpp { background: #f1f7ff; }
-    .card-rules { background: #fff; border: 1px solid #eee; }
-
-    /* Highlights matched columns */
     .highlight { background: #fff7cc; }
-
-    /* Rules Input Area */
     .rule-row { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
     .rule-label { width: 200px; font-weight: 600; font-size: 13px; }
     .rule-input { flex: 1; padding: 8px; border-radius: 6px; border: 1px solid #ddd; font-size: 13px; }
@@ -76,26 +33,17 @@
 <body>
 
 <nav class="navbar">
-    <a href="index.html" class="nav-brand">
-        <span>← Back to Dashboard</span>
-    </a>
-    <div class="nav-search">
-        <input type="text" placeholder="Go back to search..." disabled style="opacity: 0.6; cursor: not-allowed; background: #eee;">
-    </div>
+    <a href="../index.html" class="nav-brand"><span>← Back to Dashboard</span></a>
 </nav>
 
 <div class="container">
-
     <div class="page-header">
-        <div class="page-title">Insurance Illustration → CSV</div>
-        <div style="font-size: 14px; color: #666;">Admin tool — upload, match, review, export</div>
+        <h1 class="page-title">Insurance Illustration → CSV</h1>
+        <div style="font-size: 14px; color: #666;">IG Wealth Admin Automation Tool</div>
     </div>
 
     <div style="margin: 0 auto 28px auto; max-width: 900px; background: #fff; border: 1px solid #e0e3e8; border-radius: 10px; padding: 14px 18px; font-size: 13px; color: #444; line-height: 1.5;">
-        <strong>How to use:</strong><br>
-        1. Upload one or multiple insurance illustration Excel files.<br>
-        2. Compare the original illustration with the LPP standardized preview.<br>
-        3. Update the field matching rules below using <code>|</code> for multiple keywords.
+        <strong>Instructions:</strong> Upload insurance Excel files, review matching, and download standardized CSVs.
     </div>
 
     <div class="action-bar">
@@ -103,207 +51,119 @@
             📂 Upload illustration files
             <input id="fileInput" class="file-input" type="file" multiple onchange="loadFiles()">
         </label>
-
         <div>
             <button class="btn btn-primary" onclick="downloadCurrent()">Download current CSV</button>
             <button class="btn btn-primary" onclick="downloadAll()">Download all CSVs</button>
         </div>
     </div>
 
-    <div id="fileTabs" class="file-tabs"></div>
+    <div id="fileTabs" style="display:flex; flex-wrap:wrap; margin-bottom: 15px;"></div>
 
     <div class="preview-flex">
-        <div class="card card-illustration">
-            <h3 style="margin-top:0">Original illustration</h3>
-            <div id="originalPreview" class="table-scroll"></div>
-        </div>
-
-        <div class="card card-lpp">
-            <h3 style="margin-top:0">LPP standardized preview</h3>
-            <div id="csvPreview" class="table-scroll"></div>
-        </div>
+        <div class="card"><h3>Original</h3><div id="originalPreview" class="table-scroll"></div></div>
+        <div class="card"><h3>Standardized Preview</h3><div id="csvPreview" class="table-scroll"></div></div>
     </div>
 
-    <div class="card card-rules">
-        <h3 style="margin-top:0; margin-bottom: 15px;">Field matching rules</h3>
-        <div style="font-size:12px; color:#666; margin-bottom:15px;">
-            Use <b>|</b> for OR conditions. Example: <code>death benefit | payout on death</code>
-        </div>
+    <div class="card">
+        <h3>Field Matching Rules</h3>
         <div id="rulesContainer"></div>
     </div>
-
 </div>
 
 <script>
-// CONFIG
-const TEMPLATE_FIELDS = [
-  "Annual premium", "Cash surrender value", "Death benefit",
-  "Adjusted cost basis", "CDA credit", "Dividends paid in cash",
-  "Taxable portion of dividends", "Net cost of pure insurance", "Premiums paid by policy"
-];
+    /* # Section: JavaScript Logic for LPP Processing */
+    const TEMPLATE_FIELDS = ["Annual premium", "Cash surrender value", "Death benefit", "Adjusted cost basis", "CDA credit", "Dividends paid in cash", "Taxable portion of dividends", "Net cost of pure insurance", "Premiums paid by policy"];
+    let rules = { "Annual premium": "total annual policy premium | annualized premium | monthly premium", "Cash surrender value": "cash surrender | total cash value", "Death benefit": "death benefit | payout on death", "Adjusted cost basis": "acb | adjusted cost basis", "CDA credit": "cda | capital dividend", "Dividends paid in cash": "dividend cash | cash dividend", "Taxable portion of dividends": "taxable dividend", "Net cost of pure insurance": "ncpi | net cost of pure insurance", "Premiums paid by policy": "premium dividend" };
+    let rawFiles = {}, fileOrder = [], currentFile = "";
+    const normalize = t => String(t || "").toLowerCase();
+    const formatNumber = v => isNaN(Number(v)) ? "0.00" : Number(v).toFixed(2);
 
-let rules = {
-  "Annual premium": "total annual policy premium | annualized premium | monthly premium | total annual premium | total yearly premium",
-  "Cash surrender value": "cash surrender | total cash value",
-  "Death benefit": "death benefit | payout on death | total death",
-  "Adjusted cost basis": "acb | adjusted cost basis",
-  "CDA credit": "cda | capital dividend",
-  "Dividends paid in cash": "dividend cash | cash dividend",
-  "Taxable portion of dividends": "taxable dividend",
-  "Net cost of pure insurance": "ncpi | net cost of pure insurance",
-  "Premiums paid by policy": "premium dividend"
-};
+    function loadFiles() {
+        const files = document.getElementById("fileInput").files;
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const wb = XLSX.read(e.target.result, { type: "binary" });
+                const sheet = wb.Sheets[wb.SheetNames[0]];
+                const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                rawFiles[file.name] = { headers: data[0], rows: data.slice(1) };
+                fileOrder.push(file.name);
+                if (!currentFile) currentFile = file.name;
+                renderTabs(); render();
+            };
+            reader.readAsBinaryString(file);
+        });
+        renderRules();
+    }
 
-let rawFiles = {};
-let fileOrder = [];
-let currentFile = "";
+    function renderRules() {
+        const c = document.getElementById("rulesContainer");
+        c.innerHTML = "";
+        TEMPLATE_FIELDS.forEach(f => {
+            const row = document.createElement("div");
+            row.className = "rule-row";
+            row.innerHTML = `<div class="rule-label">${f}</div><input class="rule-input" value="${rules[f]}" oninput="rules['${f}']=this.value; render();">`;
+            c.appendChild(row);
+        });
+    }
 
-// HELPERS
-const normalize = t => String(t || "").toLowerCase();
-const formatNumber = v => {
-  const n = Number(v);
-  return isNaN(n) ? "0.00" : n.toFixed(2);
-};
+    function renderTabs() {
+        const tabs = document.getElementById("fileTabs");
+        tabs.innerHTML = "";
+        fileOrder.forEach(name => {
+            const t = document.createElement("div");
+            t.className = "file-tab" + (name === currentFile ? " active" : "");
+            t.innerText = name;
+            t.onclick = () => { currentFile = name; renderTabs(); render(); };
+            tabs.appendChild(t);
+        });
+    }
 
-// 1. LOAD FILES
-function loadFiles() {
-  const files = document.getElementById("fileInput").files;
-  rawFiles = {};
-  fileOrder = [];
-  currentFile = "";
+    function render() {
+        const file = rawFiles[currentFile]; if (!file) return;
+        const { headers, rows } = file;
+        let matchedIndexes = [];
+        let outputs = rows.map(r => {
+            let out = {};
+            TEMPLATE_FIELDS.forEach(field => {
+                const keywords = rules[field].split("|").map(k => k.trim());
+                const idx = headers.findIndex(h => keywords.some(k => normalize(h).includes(normalize(k))));
+                let val = idx >= 0 ? r[idx] : 0;
+                if (idx >= 0 && normalize(headers[idx]).includes("monthly") && !isNaN(val)) val *= 12;
+                out[field] = val || 0;
+                if (idx >= 0) matchedIndexes.push(idx);
+            });
+            return out;
+        });
 
-  Array.from(files).forEach(file => {
-    const reader = new FileReader();
-    reader.onload = e => {
-      const wb = XLSX.read(e.target.result, { type: "binary" });
-      const sheet = wb.Sheets[wb.SheetNames[0]];
-      const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        let o = "<table><thead><tr>"; headers.forEach(h => o += `<th>${h}</th>`); o += "</tr></thead><tbody>";
+        rows.forEach(r => { o += "<tr>"; r.forEach((c,i) => o += `<td class="${matchedIndexes.includes(i) ? "highlight" : ""}">${c ?? ""}</td>`); o += "</tr>"; });
+        document.getElementById("originalPreview").innerHTML = o + "</tbody></table>";
 
-      rawFiles[file.name] = { headers: data[0], rows: data.slice(1) };
-      fileOrder.push(file.name);
-      if (!currentFile) currentFile = file.name;
+        let l = "<table><thead><tr>"; TEMPLATE_FIELDS.forEach(h => l += `<th>${h}</th>`); l += "</tr></thead><tbody>";
+        outputs.forEach(r => { l += "<tr>"; TEMPLATE_FIELDS.forEach(h => l += `<td>${formatNumber(r[h])}</td>`); l += "</tr>"; });
+        document.getElementById("csvPreview").innerHTML = l + "</tbody></table>";
+    }
 
-      renderTabs();
-      render();
-    };
-    reader.readAsBinaryString(file);
-  });
-  renderRules();
-}
-
-// 2. RENDER RULES
-function renderRules() {
-  const c = document.getElementById("rulesContainer");
-  c.innerHTML = "";
-  TEMPLATE_FIELDS.forEach(f => {
-    const row = document.createElement("div");
-    row.className = "rule-row";
-    row.innerHTML = `
-      <div class="rule-label">${f}</div>
-      <input class="rule-input" value="${rules[f]}"
-        oninput="rules['${f}']=this.value; render();">
-    `;
-    c.appendChild(row);
-  });
-}
-
-// 3. RENDER TABS
-function renderTabs() {
-  const tabs = document.getElementById("fileTabs");
-  tabs.innerHTML = "";
-  fileOrder.forEach(name => {
-    const t = document.createElement("div");
-    t.className = "file-tab" + (name === currentFile ? " active" : "");
-    t.innerText = name;
-    t.onclick = () => {
-      currentFile = name;
-      renderTabs();
-      render();
-    };
-    tabs.appendChild(t);
-  });
-}
-
-// 4. RENDER TABLES
-function render() {
-  const file = rawFiles[currentFile];
-  if (!file) return;
-
-  const { headers, rows } = file;
-  let matchedIndexes = [];
-
-  let outputs = rows.map(r => {
-    let out = {};
-    TEMPLATE_FIELDS.forEach(field => {
-      const keywords = rules[field].split("|").map(k => k.trim());
-      const idx = headers.findIndex(h => keywords.some(k => normalize(h).includes(normalize(k))));
-      
-      let val = idx >= 0 ? r[idx] : 0;
-      if (idx >= 0 && normalize(headers[idx]).includes("monthly") && !isNaN(val)) {
-        val *= 12;
-      }
-      out[field] = val || 0;
-      if (idx >= 0) matchedIndexes.push(idx);
-    });
-    return out;
-  });
-
-  // Original Table
-  let o = "<table><thead><tr>";
-  headers.forEach(h => o += `<th>${h}</th>`);
-  o += "</tr></thead><tbody>";
-  rows.forEach(r => {
-    o += "<tr>";
-    r.forEach((c,i) => o += `<td class="${matchedIndexes.includes(i) ? "highlight" : ""}">${c ?? ""}</td>`);
-    o += "</tr>";
-  });
-  o += "</tbody></table>";
-  document.getElementById("originalPreview").innerHTML = o;
-
-  // LPP Table
-  let l = "<table><thead><tr>";
-  TEMPLATE_FIELDS.forEach(h => l += `<th>${h}</th>`);
-  l += "</tr></thead><tbody>";
-  outputs.forEach(r => {
-    l += "<tr>";
-    TEMPLATE_FIELDS.forEach(h => l += `<td>${formatNumber(r[h])}</td>`);
-    l += "</tr>";
-  });
-  l += "</tbody></table>";
-  document.getElementById("csvPreview").innerHTML = l;
-}
-
-// 5. DOWNLOAD
-function downloadCurrent() { if (currentFile) exportCSV(currentFile); }
-function downloadAll() { fileOrder.forEach(exportCSV); }
-
-function exportCSV(name) {
-  const rows = rawFiles[name].rows;
-  const headers = rawFiles[name].headers;
-  
-  let processed = rows.map(r => {
-    let out = {};
-    TEMPLATE_FIELDS.forEach(field => {
-      const keywords = rules[field].split("|").map(k => k.trim());
-      const idx = headers.findIndex(h => keywords.some(k => normalize(h).includes(normalize(k))));
-      let val = idx >= 0 ? r[idx] : 0;
-      if (idx >= 0 && normalize(headers[idx]).includes("monthly") && !isNaN(val)) val *= 12;
-      out[field] = val || 0;
-    });
-    return out;
-  });
-
-  let csv = TEMPLATE_FIELDS.join(",") + "\n";
-  processed.forEach(r => {
-    csv += TEMPLATE_FIELDS.map(h => r[h]).join(",") + "\n";
-  });
-
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
-  a.download = `LPP-Updated-${name.replace(/\.[^/.]+$/, "")}.csv`;
-  a.click();
-}
+    function downloadCurrent() { if (currentFile) exportCSV(currentFile); }
+    function downloadAll() { fileOrder.forEach(exportCSV); }
+    function exportCSV(name) {
+        const { headers, rows } = rawFiles[name];
+        let csv = TEMPLATE_FIELDS.join(",") + "\n";
+        rows.forEach(r => {
+            csv += TEMPLATE_FIELDS.map(field => {
+                const keywords = rules[field].split("|").map(k => k.trim());
+                const idx = headers.findIndex(h => keywords.some(k => normalize(h).includes(normalize(k))));
+                let val = idx >= 0 ? r[idx] : 0;
+                if (idx >= 0 && normalize(headers[idx]).includes("monthly") && !isNaN(val)) val *= 12;
+                return val || 0;
+            }).join(",") + "\n";
+        });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+        a.download = `LPP-Standardized-${name.split('.')[0]}.csv`;
+        a.click();
+    }
 </script>
-
 </body>
 </html>
