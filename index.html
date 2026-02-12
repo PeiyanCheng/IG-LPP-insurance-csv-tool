@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finance Automation Dashboard</title>
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,6 +19,7 @@
     </nav>
 
     <div class="container">
+        
         <div style="margin-bottom: 30px;">
             <h1 style="font-family: 'Playfair Display', serif;">Good Morning.</h1>
             <p style="color: #666;">Select a tool to start your automation work.</p>
@@ -53,19 +55,25 @@
     </div>
 
     <script>
-        // Simple search logic to filter cards
+        // FUNCTION: Filter Tools
+        // This hides/shows cards based on what you type in the search bar
         function filterTools() {
+            // 1. Get what the user typed (convert to lowercase)
             const input = document.getElementById('searchInput').value.toLowerCase();
+            // 2. Get all cards
             const cards = document.getElementsByClassName('tool-card');
 
+            // 3. Loop through every card
             for (let i = 0; i < cards.length; i++) {
+                // Get the title and the hidden keywords
                 const title = cards[i].querySelector('.tool-title').innerText.toLowerCase();
                 const keywords = cards[i].getAttribute('data-keywords');
                 
+                // If title OR keywords contain the input text...
                 if (title.includes(input) || keywords.includes(input)) {
-                    cards[i].style.display = ""; // Show card
+                    cards[i].style.display = ""; // Show it
                 } else {
-                    cards[i].style.display = "none"; // Hide card
+                    cards[i].style.display = "none"; // Hide it
                 }
             }
         }
