@@ -177,10 +177,17 @@ th, td {
   padding: 8px; 
   text-align: right; /* Numbers look better right-aligned */
 }
+/* Update this section in style.css */
 th { 
   background: #f8f9fa; 
   font-weight: 600; 
   text-align: center; 
+  
+  /* --- NEW CODE STARTS HERE --- */
+  position: sticky; /* Tells the header to stick */
+  top: 0;           /* Sticks to the very top (0 pixels from top) */
+  z-index: 2;       /* Ensures it floats ABOVE the data rows */
+  /* --- NEW CODE ENDS HERE --- */
 }
 .table-scroll { 
   overflow: auto;       /* Adds scrollbars if table is too big */
